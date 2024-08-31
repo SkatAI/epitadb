@@ -1,0 +1,25 @@
+# Ignored Directories
+.ipynb_checkpoints/
+
+# Ignored File Types
+*.pdf
+*.xlsx
+*.pkl
+*.json
+*.log
+*.zip
+*.tar.gz
+
+# Ignored Python Files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignored Configuration Files
+.env
+.vscode/
+
+# Ignored Miscellaneous Files
+.DS_Store
+Thumbs.db
