@@ -23,3 +23,6 @@ __pycache__/
 # Ignored Miscellaneous Files
 .DS_Store
 Thumbs.db
+
+# other
+qr/*.png
