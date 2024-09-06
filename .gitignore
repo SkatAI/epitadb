@@ -27,3 +27,5 @@ Thumbs.db
 # other
 qr/*.png
 img/*.png
+
+data/treesdb_02.sql.gz

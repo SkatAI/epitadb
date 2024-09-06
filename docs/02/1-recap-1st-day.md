@@ -171,18 +171,24 @@ you can also check that server, client and table are UTF8 encoded with
 
 
 Then 
+
 * Launch pgAdmin
 
-If the database treesdb already exists, delete it. (right click on the database name)
+If the database ```treesdb``` already exists, delete it. (right click on the database name)
 
-Find the ```treesdb_02.sql.gz``` file in the github repo. 
-Download it
+Download the ```treesdb_02.sql.gz``` file in the github repo. 
+
+> https://github.com/SkatAI/epitadb/blob/master/data/treesdb.sql.gz
+
 
 This is a version of the database with the proper encoding. 
 
-now create a new database called treesdb_02
-set the user to your usename (should appear in the dropdown)
-set the encoding to UTF8
+
+**create the new database**
+
+* create a new database called treesdb_02
+* set the user to your usename (should appear in the dropdown)
+* set the encoding to UTF8
 
 The SQL tab should show 
 
@@ -195,19 +201,25 @@ CREATE DATABASE treesdb_02
     CONNECTION LIMIT = -1
     IS_TEMPLATE = False;
 ```
+**restore the database**
 
 Then click right on the treesdb_02 database and click on restore
 
-select the filename treesdb_02.sql.gz, 
-select format custom or tar
-click restore
+* select the filename treesdb_02.sql.gz, 
+* select format custom or tar
+* click restore
 
 while the db is restored, look at the process
 
 ![](./../../img/pgAdmin-process-restore.png)
 
 
-Then check that the tree table has been created in the public schema
+Then check that the tree table has been created in the public schema of the treesdb_02 database
+
+
+* select random rows
+* \d trees
+
 
 
 
