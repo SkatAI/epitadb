@@ -1,4 +1,4 @@
-# Improving the trees dataset
+remarkable# Improving the trees dataset
 In this document we explore and improve the trees dataset that has been loaded from a sql dump.
 
 
@@ -22,7 +22,7 @@ Here are the columns of the tree table
  height         | integer           |           |          |         | plain    |             |              | 
  stage          | character varying |           |          |         | extended |             |              | 
  geo_point_2d   | character varying |           |          |         | extended |             |              | 
- remarquable    | boolean           |           |          |         | plain    |             |              | 
+ remarkable    | boolean           |           |          |         | plain    |             |              | 
 
 
 
@@ -43,11 +43,12 @@ Let's do some data analysis of the dataset.
 
 Looking at some samples with
 
-```
+```sql
 select * from trees order by random() limit 1;
 ```
 
--[ RECORD 1 ]--+-------------------------------------
+     Column     |       value
+----------------+-------------------
 idbase         | 273252
 location_type  | Arbre
 domain         | Alignement
@@ -64,7 +65,7 @@ circumference  | 34
 height         | 5
 stage          | Jeune (arbre)
 geo_point_2d   | 48.89291084026716, 2.359807495821241
-remarquable    | f
+remarkable    | f
 
 
 
@@ -75,7 +76,7 @@ We see that we have
 - and also : stage, 
 - dimensions of the tree : height and circumference (in meters)
 - columns related to the location of the tree: address, suppl_address, number, ...
-- a ```remarquable``` flag
+- a ```remarkable``` flag
 - and geo location : geo_point_2d with latitude and longitude of each tree
 
 
@@ -83,9 +84,9 @@ Let's query the tree table and get a feeling for the values of the different col
 
 - how many trees per ```domain``` or ```arrondissement```
 - how many trees per stage, genre, species ...
-- how many trees are remarquable ?
+- how many trees are remarkable ?
 - do all trees have a height and a circumference ?
-- what's the average height for different domain, stage or remarquable
+- what's the average height for different domain, stage or remarkable
 
 any other thing you can think of ?
 
@@ -93,7 +94,7 @@ any other thing you can think of ?
 
 The table loaded from a csv has no primary key although ```idbase``` seems like a candidate.
 
-but could the ```idbase``` column be a primary key ?
+Could the ```idbase``` column be a primary key ?
 
 # What's a primary key and what is it used for ?
 
@@ -126,7 +127,7 @@ A primary key is usually also SERIAL.
 > When you define a column with SERIAL, PostgreSQL automatically creates a **sequence** and sets it up so that each new row gets the next value from this sequence.
     
 --- 
-Would the idbase column be a good candidate for primary key ?
+Based on this definition,  the ```idbase``` column be a good candidate for primary key ?
 
 Also, can it be serial ? 
 
@@ -188,17 +189,16 @@ alter table trees add COLUMN id SERIAL PRIMARY KEY;
 
 As expected, creating a primary key also creates a sequence ;
 
-\d returns 
 
-```shell
+```bash
 treesdb=# \d
-```
 
              
  Schema |     Name     |   Type   | Owner  
 --------+--------------+----------+--------
  public | trees        | table    | alexis
  public | trees_id_seq | sequence | alexis
+```
 
 ---
 
@@ -206,33 +206,34 @@ treesdb=# \d
 > a sequence is a special database object designed to generate a sequence of unique, incremental numbers. It is commonly used to create auto-incrementing values, typically for columns like primary keys.
 
 
-- Unique: Each number in the sequence is guaranteed to be unique.
-- Incremental: The sequence can increment (or decrement) by a specified value.
-- Independent Object: A sequence is a separate object in the database and is not directly tied to any table or column, though it is often associated with a column (like SERIAL or BIGSERIAL columns).
-- NEXTVAL Function: To get the next value in the sequence, you call nextval('sequence_name'), which increments the sequence and returns the next number.
-- START, INCREMENT, and MAXVALUE: You can specify the starting value, how much to increment by, and an optional maximum value for the sequence.
+- **Unique**: Each number in the sequence is guaranteed to be unique.
+- **Incremental**: The sequence can increment (or decrement) by a specified value.
+- **Independent Object**: A sequence is a separate object in the database and is not directly tied to any table or column, though it is often associated with a column (like SERIAL or BIGSERIAL columns).
+- **NEXTVAL Function**: To get the next value in the sequence, you call nextval('sequence_name'), which increments the sequence and returns the next number.
+- **START, INCREMENT, and MAXVALUE**: You can specify the starting value, how much to increment by, and an optional maximum value for the sequence.
 
 ---
 
 
 
-```
+```sql
 \d+ trees_id_seq
-```
 
   Type   | Start | Minimum |  Maximum   | Increment | Cycles? | Cache 
 ---------+-------+---------+------------+-----------+---------+-------
  integer |     1 |       1 | 2147483647 |         1 | no      |     1
 Owned by: public.trees.id
+```
 
-and 
-```
+and
+ 
+```sql
 \d+ trees
-```
 
     Column     |       Type        | Collation | Nullable |              Default              
 ----------------+-------------------+-----------+----------+-----------------------------------
  id             | integer           |           | not null | nextval('trees_id_seq'::regclass)
+```
 
 
 
@@ -240,38 +241,38 @@ notice the ```nextval('trees_id_seq'::regclass)``` which increments the counter 
 
 also notice the new index 
 
-```
+```sql
 Indexes:
     "trees_pkey" PRIMARY KEY, btree (id)
 ```
 
-We can keep the ```idbase``` for future references but we will use id as the primary key.
+We can keep the ```idbase``` for future references but we will use ```id``` as the primary key.
 
 
 # Improving the column types
 At this point, all columns are ```varchar``` except for the height and circumference
 
-that does not make sense for  columns such as:  ```remarquable```, and geo_point_2d (latitude and longitude)
+that does not make sense for  columns such as:  ```remarkable```, and geo_point_2d (latitude and longitude)
 
-- ```remarquable``` should be a boolean
+- ```remarkable``` should be a boolean
 
 How to transform the column which has 'NON', 'OUI; or '' (empty string) as boolean : t, f and null
 
 ```sql
-ALTER TABLE trees ADD COLUMN remarquable_bool BOOLEAN;
+ALTER TABLE trees ADD COLUMN remarkable_bool BOOLEAN;
 
 UPDATE trees
-SET remarquable_bool = 
+SET remarkable_bool = 
     CASE 
-        WHEN remarquable = 'OUI' THEN TRUE
-        WHEN remarquable = 'NON' THEN FALSE
-        WHEN remarquable = '' THEN NULL
+        WHEN remarkable = 'OUI' THEN TRUE
+        WHEN remarkable = 'NON' THEN FALSE
+        WHEN remarkable = '' THEN NULL
         ELSE NULL
     END;
 
-ALTER TABLE trees DROP COLUMN remarquable;
+ALTER TABLE trees DROP COLUMN remarkable;
 
-ALTER TABLE trees RENAME COLUMN remarquable_bool TO remarquable;
+ALTER TABLE trees RENAME COLUMN remarkable_bool TO remarkable;
 ```
 
 
@@ -303,7 +304,7 @@ we won't go into details about PostGIS
 
 here is the site and a list of tutorials if you need to go deeper
 
-https://postgis.net/documentation/training/ 
+[postgis documentation](https://postgis.net/documentation/training/) 
 
 
 First we need to install the PostGIS extension if it's not installed yet. 
@@ -322,6 +323,20 @@ if this returns 0 rows you need to install PostGIS on the server and then activa
 brew install postgis
 brew restart
 ```
+
+
+### Note
+
+Installing postGIS with ```brew install postgis``` on Mac, requires postgres14. 
+If you have already installed postgres16, you'd have to install postgres14 and things will probably become messy
+
+An alternative is to use the Postgres app https://postgresapp.com/ that bundles postgres164 and postgis 3.4. 
+
+I haven't tried. This will probably also require to uninstall your the postgres already installed.
+
+So no quick and easy way to install postgis with postgres16 on Mac at this point.
+
+If you're in that situation (existing postgres16 on Mac) just switch to using the postgres native Point data type. see below 
 
 ### install PostGIS  on Windows
 
@@ -360,7 +375,7 @@ sudo apt install postgresql-16-postgis-3
 ### activate the extension
 In the psql console activate the extension with:
 
-```
+```sql
 CREATE EXTENSION postgis;
 ```
 
@@ -370,6 +385,7 @@ now connect with psql and check that postGis is installed
 ```sql
 SELECT * FROM pg_extension WHERE extname = 'postgis';
 ```
+
 
 
 # Transform the geo_point_2d from varchar to GEOGRAPHY 
@@ -397,14 +413,10 @@ CREATE INDEX idx_trees_geography ON trees USING GIST (geo_point_geography);
 
 ## Closest trees
 
-Now we can find the N (=10) closest trees to a given lat long location
+Now we can find the N (=10) closest trees to a given tree
 
-you can use that address to lat long converter 
-https://www.latlong.net/convert-address-to-lat-long.html
 
-and the query 
-
-```
+```sql
 WITH given_tree AS (
   SELECT id, geo_point_geography
   FROM trees
@@ -417,7 +429,6 @@ WHERE t.id != gt.id
 ORDER BY t.geo_point_geography <-> gt.geo_point_geography
 LIMIT 9;  -- 10-1, as we're excluding the reference tree
 ```
-
 
 
 We use ```ST_Distance()``` function to calculate the great-circle distance between two points on the Earth's surface.
@@ -442,15 +453,23 @@ The query is a CTE or Common Table Expressions
 
 -> modify the query so that it takes a lat long instead of a tree_id
 
+you can use that address to lat long converter 
+https://www.latlong.net/convert-address-to-lat-long.html
+
+
+
 -- Query to find N nearest trees given a latitude and longitude
 -- Using a CTE to define the location
 
 transform a set of lat long to a geography type with 
-```SELECT ST_SetSRID(ST_MakePoint(-74.0060, 40.7128), 4326)::geography AS geog```
+
+```sql
+SELECT ST_SetSRID(ST_MakePoint(-74.0060, 40.7128), 4326)::geography AS geog
+```
 
 so the query becomes 
 
-```
+```sql
 WITH location AS (
     SELECT ST_SetSRID(ST_MakePoint(-74.0060, 40.7128), 4326)::geography AS geog
 )
@@ -467,6 +486,69 @@ ORDER BY
 LIMIT 5;
 ```
 
+# Transform the geo_point_2d from varchar to POINT
+
+
+* We add a column ```geolocation``` with type POINT.
+* Update the new column with POINT values  
+* delete the original ```geo_point_2d``` column
+
+```sql
+ALTER TABLE trees ADD COLUMN geolocation POINT;
+
+UPDATE trees
+SET geolocation = point(
+    TRIM(SPLIT_PART(geo_point_2d, ',', 2))::float,
+    TRIM(SPLIT_PART(geo_point_2d, ',', 1))::float
+);
+
+ALTER TABLE trees DROP COLUMN geo_point_2d;
+```
+
+Note that the lat and longitude have been swapped.
+
+We should verify that this makes sense (use google maps)
+
+
+
+* In geo_point_2d (String representation):
+    * The order is typically (latitude, longitude). This is a common human-readable format, often used in everyday applications and GPS coordinates. 
+* In geolocation (Point data type):
+    * The order is (x, y), which for geographic coordinates translates to (longitude, latitude). This is the standard for many geographic information systems and spatial databases. 
+ 
+
+## Closest tree
+Given a tree index, find the N closest trees
+
+
+
+```sql
+
+WITH given_tree AS (
+  SELECT id, geolocation
+  FROM trees
+  WHERE id = 1234  
+)
+SELECT 
+  t.id, 
+  t.geolocation,
+  ROUND(
+    SQRT(
+      POW((t.geolocation[0] - gt.geolocation[0]) * 73000, 2) +
+      POW((t.geolocation[1] - gt.geolocation[1]) * 111000, 2)
+    )
+  ) AS distance_meters
+FROM trees t, given_tree gt
+WHERE t.id != gt.id
+ORDER BY t.geolocation <-> gt.geolocation
+LIMIT 9;
+```
+
+
+This query directly calculates the euclidian distance to find the distance between 2 points and applies different scales to latitude and longitude (111000 and 73000 respectively).
+
+
+We can then adapt the query to find the trees near a given location if we know its coordinates
 
 ## Some common queries 
 
@@ -474,8 +556,8 @@ To finish our work on the trees table, we'd like to flag trees that have anomali
 
 So let's create a BOOLEAN column that indicates that there's an anomaly with a tree record.
 
-```
-alter table trees add column anomaly bool default FALSE NOT NULL
+```sql
+alter table trees add column anomaly bool default FALSE NOT NULL;
 ```
 
 Then find some weird trees
@@ -501,17 +583,16 @@ update trees
 set diameter = circumference / PI();
 ```
 
+and find trees that have a insanely high diameter
 
-and find tress that have a insanely high diameter
 update the anomaly column with these trees
 
 also set the anomaly column to true for duplicates of idbase
 
 are there other anomalies such as duplicates addresses or zero values for height or cicumference / diameter ?
 
-
-write a query to find : min, max, average, median, 95 and 5 percentiles for a given float ccolumn. 
-this mimics the df.describe() in pandas dataframes.
+To detect anomalies for a given column, you can get a good insight about a variable distribution by writing a query to find : min, max, average, median, 95 and 5 percentiles for a given float ccolumn. 
+this mimics the ```df.describe()``` in pandas dataframes.
 
 ```sql
 SELECT
@@ -524,25 +605,112 @@ SELECT
     PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY diameter) AS median,
     PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY diameter) AS q3,
     PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY diameter) AS q95,
+    PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY diameter) AS q99,
     MAX(diameter) AS max
 FROM trees;
 
 ```
+
+
+It may be difficult to deciode if the height or diameter of a tree is an anomaly or not.
+
+for instance the tree 187635 has a height of 98m. 
+
+column | value 
+--- | ---
+idbase         | 2018097
+location_type  | Arbre
+domain         | Alignement
+arrondissement | PARIS 18E ARRDT
+suppl_address  | 108V
+number         | 
+address        | RUE DE LA CHAPELLE
+id_location    | 2002004
+name           | Platane
+genre          | Platanus
+species        | x hispanica
+variety        | 
+circumference  | 68
+**height**         | **98**
+stage          | Jeune (arbre)
+geo_point_2d   | 48.89815810816667, 2.3591531336170086
+id             | 187635
+remarkable     | f
+diameter       | 21.645072260497766
+geolocation    | (2.3591531336170086,48.89815810816667)
+
+
+that's a lot but is it a valid height for a  tree? Are they trees that tall in Paris ?
+
+We can investigate in 2 ways 
+
+input the coordinates in google maps and look at the [photo of the street](https://www.google.com/maps/@48.8982496,2.3591069,3a,75y,180h,90t/data=!3m7!1e1!3m5!1sWZpyESvb1Go6xQS5MH5JNg!2e0!6shttps:%2F%2Fstreetviewpixels-pa.googleapis.com%2Fv1%2Fthumbnail%3Fpanoid%3DWZpyESvb1Go6xQS5MH5JNg%26cb_client%3Dsearch.revgeo_and_fetch.gps%26w%3D96%26h%3D64%26yaw%3D50.489685%26pitch%3D0%26thumbfov%3D100!7i16384!8i8192!5m1!1e4?coh=205409&entry=ttu&g_ep=EgoyMDI0MDkwNC4wIKXMDSoASAFQAw%3D%3D)
+
+
+
+or check the height of nearby trees with the closest trees query 
+
+```sql
+WITH given_tree AS (
+  SELECT id, geolocation
+  FROM trees
+  WHERE id = 187635  
+)
+SELECT 
+  t.id, 
+  t.height,
+  t.geolocation,
+  ROUND(
+    SQRT(
+      POW((t.geolocation[0] - gt.geolocation[0]) * 73000, 2) +
+      POW((t.geolocation[1] - gt.geolocation[1]) * 111000, 2)
+    )
+  ) AS distance_meters
+FROM trees t, given_tree gt
+--WHERE t.id != gt.id
+ORDER BY t.geolocation <-> gt.geolocation
+LIMIT 9;
+
+```
+All surrounding trees have a height of 5 to 16 meters. So 98 meters is not a valid measurement.
+
+
+
  
+### Solution
+
+the 100m threshold is arbitrary. For a real data analysis and we would have to find more relevant thresholds.
+
+```sql
+update trees set anomaly = TRUE where (diameter > 100) or (height > 100);
+```
+
+and to flag the trees with duplicate idabase
+```sql
+update trees set anomaly = true where  idbase IN (
+    SELECT idbase
+    FROM trees
+    GROUP BY idbase
+    HAVING COUNT(*) > 1
+);
+```
+ 
+In the end we have 851 trees with anomaly measurements.
 
 # Recap
 
 The table loaded from the csv / sql dump was lacking a primary key, proper datatypes and had many data anomalies
 
-We checked that the ```idbase``` column was not a good choice as a primary key
-Transformed remarquable as a boolean data type, 
-installed and activated the postgis extension 
-which allowed us to transform the geo_point_2d into a postGIS GEOGRAPGY data type and find closest trees given a location
-We also looked at the extreme or missing values of height, circumference and diameter of some trees and flagged these trees. 
+* We checked that the ```idbase``` column was not a good choice as a primary key
+* Transformed remarkable as a boolean data type, 
+* installed and activated the postgis extension (when possible)
+* which allowed us to transform the geo_point_2d into a postGIS GEOGRAPGY data type and find closest trees given a location
+* we also looked at the native POINT data type
+* We identified the extreme or missing values of height, circumference and diameter of some trees and flagged these trees. 
 
 
-The current table is much more clean and ready for production
+The current table is much more clean and in a state more compatible with production.
 
-Next we more away from the single table database and start building a proper relational database from that data.
+Next we move away from the single table database and start building a proper relational database from that dataset.
 
 

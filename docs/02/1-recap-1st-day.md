@@ -176,9 +176,9 @@ Then
 
 If the database ```treesdb``` already exists, delete it. (right click on the database name)
 
-Download the ```treesdb_02.sql.gz``` file in the github repo. 
+Download the ```treesdb_v02.sql.gz``` file in the github repo. 
 
-> https://github.com/SkatAI/epitadb/blob/master/data/treesdb.sql.gz
+> https://github.com/SkatAI/epitadb/blob/master/data/treesdb_v02.sql.gz
 
 
 This is a version of the database with the proper encoding. 
@@ -205,9 +205,20 @@ CREATE DATABASE treesdb_02
 
 Then click right on the treesdb_02 database and click on restore
 
-* select the filename treesdb_02.sql.gz, 
+* select the filename treesdb_v02.sql.gz, 
 * select format custom or tar
 * click restore
+
+The command line equivalent is 
+
+```bash
+pg_restore --host "localhost" \ 
+--port "5432" \
+--username "alexis" \
+--no-password \
+--dbname "treesdb_02" \
+"/Users/alexis/work/epitadb/data/treesdb_02.sql.gz"
+```
 
 while the db is restored, look at the process
 
