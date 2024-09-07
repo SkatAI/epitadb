@@ -29,7 +29,8 @@ and then
 - Denormalization when needed (OLAP)
 - Functional dependency
 
-Pratice
+Pratice:
+
 - we'll normalize the tree database
 - look at denormalization of the airdb database
 
@@ -63,7 +64,7 @@ See this article for a complete explanation of ER diagrams. As you can see there
 
 see also the [wikipedia page](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model)
 
-![](./../img/ER_Diagram_MMORPG.png)
+![](./../../img/ER_Diagram_MMORPG.png)
 
 ## ER diagram for relational databases 
 
@@ -89,11 +90,11 @@ The ER diagram displays the **relations** between the **entities** (tables) pres
 - click on ERD for database
 
 
-![](./../img/pgAdmin-ERD-click-right.png)
+![](./../../img/pgAdmin-ERD-click-right.png)
 
 You can change notation for the relation type with 
 
-![](./../img/pgAdmin-ERD-notation-swap.png)
+![](./../../img/pgAdmin-ERD-notation-swap.png)
 
 
 ---
@@ -116,7 +117,7 @@ The end usage of the database drives its data structure
 - ACID properties for transactions (all or nothing) (ACID: (Atomicity, Consistency, Isolation, Durability))
 - synchronous, real time
 
-![](./../img/olap-vs-oltp.png)
+![](./../../img/olap-vs-oltp.png)
 
 
 * Further reading (look at the difference table and the Q&A at the end of the article) : [difference between olap and oltp in dbms](https://www.geeksforgeeks.org/difference-between-olap-and-oltp-in-dbms/)
@@ -153,10 +154,10 @@ For each scenario, determine whether it's more suited for an OLTP (Online Transa
 # choosing between 2 designs
 
 **1 account table with multiple phones**
-![](./../img/design-1-table.png)
+![](./../../img/design-1-table.png)
 
 **1 account table and 1 dedicated phone table**
-![](./../img/design-2-tables.png)
+![](./../../img/design-2-tables.png)
 
 which design (1 or 2 tables) is betterin terms of faster or simpler query for: 
 
@@ -174,19 +175,22 @@ which design (1 or 2 tables) is betterin terms of faster or simpler query for:
 The general goal of **normalization** is to reduce data **redundancy** and **dependency** 
 by organizing data into **separate, related tables**. 
 
-This helps maintain data integrity and flexibility. 
-- logical
-- independence
-- uniqueness
+This helps maintain data integrity and flexibility:
+ 
+- logical entities
+- independence between tables
+- uniqueness of data
+
+Normalized databases are 
 
 - easy to update
 - easy to maintain
 
-Informally, a database schema is normalized if all column values depend only on the table primary key,  and data is decomposed into multiple tables to avoid repetition.
+Informally, a database is normalized if all column values depend only on the table primary key,  and data is decomposed into multiple tables to avoid repetition.
 
-In the _1 table design_ for the account and its phone numbers, a phone number value depends on the name of the phone column not just the account_id key : it's not normalized
+In the _1 table design_ for the account and its phone numbers, a phone number value depends on the name of the phone column (home_phone, work_phone, ...) not just the account_id key : it's not normalized
 
-With a dedicated phone table, The phone value depends only on the phone_id key : normalized
+With a dedicated phone table, the phone value depends only on the phone_id key : normalized
 
 ---
 
@@ -196,7 +200,7 @@ The idea of denormalization is to have data redundancy to simplify queries and m
 
 Redundant data : the same data / info exists in multiple tables
 
-select queries may involve less joins but updates are more complex. data Integrity may be challenged
+select queries may involve less joins but updates are more complex and data integrity is more complex to preserve.
 
 
 ## Scenario:
@@ -206,12 +210,15 @@ In a social network, you have two tables:
 1. **Users table**: Contains user information like `user_id`, `name`, and `email`.
 2. **Posts table**: Contains posts made by users, with fields like `post_id`, `user_id`, and `content`.
 
-In a **normalized** database: the `Posts` table only contains `user_id` as a foreign key. If if you want to display the user's name next to their post, you need to  **JOIN** `Users` and `Posts` tables.
+In a **normalized** database: the `Posts` table only contains `user_id` as a foreign key. 
+
+If if you want to display the user's name next to their post, you need to  **JOIN** `Users` and `Posts` tables.
 
 
-To improve performance you can **denormalize** by adding the `user_name` to the `Posts` table.
+To improve performance you can **denormalize** the Posts table by adding the `user_name` to the `Posts` table.
 
 #### Denormalized `Posts` table:
+
 | post_id | user_id | user_name | content        |
 |---------|---------|-----------|----------------|
 | 1       | 101     | Ulaf     | Hello world!   |
@@ -222,6 +229,7 @@ To improve performance you can **denormalize** by adding the `user_name` to the 
 - Faster read performance: You can fetch the `user_name` along with the post data without needing to perform a join between the `Users` and `Posts` tables.
 
 But
+
 - **Data redundancy**: If Ulaf changes his name, you will need to update it in both the `Users` table and every row in the `Posts` table that references him. This increases the complexity of updates.
 
 ---
@@ -229,7 +237,7 @@ But
 
 # Anomalies
 
-Given a database, how do you know if it needs to be normalized ?
+Given a database, how do you know if it needs to be normalized ? 
 
 There are 3 types of anomalies that you can look for
 
@@ -237,6 +245,7 @@ There are 3 types of anomalies that you can look for
 - update
 - deletion
 
+normalization would solve these anomalies.
 
 ## Insertion anomalies
 
@@ -310,21 +319,25 @@ If for imperative reasons we want to scrape all records of the _War AI_ project 
 
 ## In short
 
-When you have different entities packed together in the same table, there will be anomalies and you need to normalize.
+When you have different **natural entities** packed together in the same table, there will be anomalies and you need to normalize.
 
 ---
+
 # The problem with null values
 
-- Ambiguity: Null can mean "unknown," "not applicable," or "missing," leading to confusion.
+Why is it a problem to have NULL values in a column?
 
-- requires special handling and complicates 
-    - queries: (`IS NULL` vs `=`) .
-    - data analysis:  `NULL` values are ignored in aggregate functions (like `SUM`, `COUNT`).
+- **Ambiguity**: Null can mean "unknown," "not applicable," or "missing," leading to confusion.
 
-- Impacts indexing and performance: since Nulls are excluded from indexes
+- requires **special handling** and complicates
+    - **queries**: (`IS NULL` vs `=`) .
+    - **data analysis**:  `NULL` values are ignored in aggregate functions (like `SUM`, `COUNT`).
 
-- Violates normalization: indicates poor database design or incomplete relationships.
+- Impacts **indexing and performance**: since Nulls are excluded from indexes
 
+- **Violates normalization**: indicates poor database design or incomplete relationships.
+
+So avoid NULL values
 
 ---
 
@@ -354,19 +367,17 @@ Need for normalization when:
 - multiple columns with data of same nature, different types 
 - same data exists in multiple tables
 
-or simply said 
+or simply said: 
 
-> ##**every non-key attribute must provide a fact about the key, the whole key, and nothing but the key**
+> ## every non-key attribute must provide a fact about the key, the whole key, and nothing but the key
 
 --- 
 
 # Normal forms
-A normal form is a **rule** that defines a level of normalization
+A normal form is a **rule** that defines a level of normalization.
 
 
-
-
-In general a database is considered normalized if it meets NF3
+In general a database is considered normalized if it meets 3NF level.
 
 * UNF: Unnormalized form
 * 1NF: First normal form
@@ -383,23 +394,17 @@ But there are multiple other levels
 * DKNF: Domain-key normal form
 * 6NF: Sixth normal form
 
+It gets very abstracts very quickly.
 
+Normal forms are a gradual step by step process towards normalization. Each is a guide that focuses on a single type of problem. We can always choose to apply a normalization form or to ignore it
 
-Normal forms are a gradual step by step process towards normalization. Each is a guide that focuses on a single type of problem. 
-
-We can always choose to follow the process or ignore it
-
-In the following 
+In the following, we mention about: 
 
 * Relation : table
 * Attribute : column
 * Primary key
 * Composite key : key composed of multiple attributes
 
-
-and we consider 
-* A has many Bbs 
-* Relation is  B(B.id, B.attribute, A.id, A.attribute)
 
 # 1NF
 
@@ -423,16 +428,16 @@ More on 1NF :
 
 ## Wait, ... what ?
 
-There's a contradiction between first normal form (1NF) and the existence of array and JSON data types in SQL databases
+There's a contradiction between first normal form (1NF) and the existence of **ARRAY** and **JSONB** (see also POINT, HRANGE, composite types, and many other types) data types in SQL databases
 
 The rule of thumb is :
 
-When you frequently need to access, modify, handle the elements of the sets of values for a given record => apply 1NF
+> When you frequently need to access, modify, handle the elements of the sets of values for a given record then> apply 1NF
 
-Balance between simplicity and control
+It's a balance between simplicity and control
 
 
-For instance 
+For instance: 
 
 * Use normalization (1NF) when:
     * Storing a list of order items, where each item needs its own price, quantity, and product reference.
@@ -440,7 +445,6 @@ For instance
 
 
 * Use multi-value types when:
-
     * Storing tags for a blog post, where the tags are simply a list of strings with no additional attributes.
     * ...
 
@@ -448,7 +452,7 @@ For instance
 
 # 2NF
 
-The table :
+The table is in 2NF iff :
 
 * is in 1NF 
 * has a single attribute unique identifier (UID)
@@ -456,10 +460,6 @@ The table :
 
 
 Some cases of non compliance with 2NF
-
-* Inverted one to many
-    * A has many Bs
-    * Relation: B(Bid, B.attribute, A.attribute)
 
 * Derived or calculated fields:
     * Relation: Employee(EmployeeID, Name, BirthDate, Age)
@@ -469,10 +469,16 @@ Some cases of non compliance with 2NF
     * Relation: Order(OrderID, ProductID, ProductName, ProductCategory)
     * ProductCategory and ProductName both depend on ProductID, not the full OrderID.
 
+* Inverted one to many
+    * A has many Bs
+    * Relation: B(Bid, B.attribute, A.attribute)
+
 * Composite keys with partial dependencies:
     * Relation: R(A, B, C, D) where (A, B) is the composite primary key
     * If C depends only on A, we have a 2NF violation.
 
+
+The 1 table version of the account phone table was not in 2NF.
 
 see :
 
@@ -481,13 +487,13 @@ see :
 
 ## 2NF violation in the trees table
 
-The tree table has many 2nF violations, since all the categorical columns are into a one to many (category has many trees) relation.
+The tree table has many 2NF violations, since all the categorical columns are into a one to many (category has many trees) relation.
 
 2NF normalization tells us we should create a table for the categories. 
+
 But that feels overkill and instead of simplifying the logical structure of the data it complexifies it without clear gain
 
 Keeping the categories in the tree table is a form of denormalization 
-which can be ok
 
 ## When to apply 2NF to a categorical attribute ?
 
@@ -498,7 +504,7 @@ You might consider normalizing a categorical attribute (column) into a separate 
 * There's a need to enforce referential integrity on categories.
 * The application requires complex operations or reporting on categories.
 
-Evolving designs:
+Design evolution:
 
 * Start with categorical attributes . 
 * You can always normalize later.
@@ -508,20 +514,20 @@ Evolving designs:
 
 # 3NF
 
-a table is in 3NF if and only if both of the following conditions hold:
+A table is in 3NF if and only if both of the following conditions hold:
 
-* The relation R (table) is in second normal form (2NF).
+* The table is in second normal form (2NF).
 * No non-prime attribute of R is transitively dependent on the primary key.
 
-A transitive dependency occurs when a non-prime attribute (an attribute that is not part of any candidate key) depends on another non-prime attribute, rather than depending directly on the primary key.
+A transitive dependency occurs when a non-prime attribute (an attribute that is not part of any key) depends on another non-prime attribute, rather than depending directly on the primary key.
 
 where: 
-* non-prime attribute: an attribute that is not part of any candidate key
+* non-prime attribute: an attribute that is not part of any key
 
-It's becoming a bit abstract 
+It's becoming a bit abstract :) 
 
 
-**example**
+### **Example**
 
 Student(StudentID, Name, CourseID, CourseName, InstructorName)
 
@@ -547,6 +553,7 @@ The key differences:
 * Nature of the dependency:
     * 2NF addresses partial dependencies on a key.
     * 3NF addresses transitive dependencies through non-key attributes.
+    
 * Scope of the problem:
     * 2NF focuses on the relationship between non-key attributes and parts of the key.
     * 3NF looks at dependencies between non-key attributes.
@@ -554,6 +561,8 @@ The key differences:
 
 -- 
 # Denormalize
+
+When to denormalize ?
 
 Dimitri Fontaine - The Art of PostgreSQL (2022)
 [The Art of PostgreSQL](https://theartofpostgresql.com/) 
@@ -571,9 +580,9 @@ In short: **Keep it simple**
 
 ---
 
-# PostgreSQL multi valued data types
+# PostgreSQL multi-valued data types
 
-PostgreSQL offers several data types that can store multiple values in a single column, which technically breaks the First Normal Form (1NF). 
+PostgreSQL offers several data types that can store multiple values in a single column, which breaks the First Normal Form (1NF). 
 
 These types are often used for performance optimization, improved query efficiency, or when the data naturally fits a more complex structure.
 
@@ -620,13 +629,14 @@ When to use:
 * For improving query performance by reducing joins.
 * When you want to enforce a structure on a group of related fields.
 
+# PostgresQL data types are many
 
----
-# Let's normalize treesdb
+There are many data types in postgreSQL
+
+see https://www.postgresql.org/docs/current/datatype.html
+
+see also the long list of availabe data types when adding a column in pgAdmin
 
 
-
----
-
-# More
+![](./../../img/pgAdmin-add-column-data-types.png)
 
