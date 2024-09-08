@@ -45,7 +45,7 @@
 # Optimization 1
 ----------------------------------
 
-Goals : 
+Goals :
 - optimize a query
 - read an execution plan
 - apply and use index
@@ -55,7 +55,7 @@ SQL : declarative language not an imperative language [p27]
 theory : filter, project, product
 
 from query to exec : compilation, optimization, execution
-what is a relation 
+what is a relation
 
 - cost function & algorithm
 - indexes
@@ -83,7 +83,7 @@ analyze multiple execution plans
 work on smaller version of ademe ? on local
 run queries that are complex
 explain queries
-add index 
+add index
 check index is used
 example where index is not used
 
@@ -100,14 +100,14 @@ impact of data type on query planning
 also windows functions
 https://www.youtube.com/watch?v=Ww71knvhQ-s&list=PLavw5C92dz9GbmgiW4TWVnxhjMFOIf0Q7
 
-# Views 
+# Views
 ----------------------------------
 
 1. Introduction
    - Learning objectives: What students will gain from this class
    - Brief overview of views in PostgreSQL
 
-A **view** in PostgreSQL is a virtual table that is created by a `SELECT` query. 
+A **view** in PostgreSQL is a virtual table that is created by a `SELECT` query.
 It acts as a stored query that users can treat like a regular table, allowing for the abstraction and simplification of complex queries.
 
 Views are useful for OLAP databases
@@ -117,13 +117,13 @@ Views are useful for OLAP databases
    - Data security and access control (limit displayed columns )
    - Consistency in data representation
    - Abstraction of underlying table structures (a strategy when the database is highly normalized and queries have many joins)
-    
-	2.1 **Virtual Table**: 
-   - A view does not store data itself. Instead, it presents data from one or more tables based on the query used to define it. 
+
+	2.1 **Virtual Table**:
+   - A view does not store data itself. Instead, it presents data from one or more tables based on the query used to define it.
    - When you query a view, PostgreSQL executes the underlying `SELECT` statement and returns the result set as if it were a table.
 
 	2.2. **Simplicity**:
-   - Views simplify complex queries by encapsulating them into a single, reusable entity. 
+   - Views simplify complex queries by encapsulating them into a single, reusable entity.
    - Users can select from a view without needing to know the underlying table structure or join conditions.
 
 	2.3. **Security**:
@@ -141,9 +141,9 @@ Views are useful for OLAP databases
    - => explain views!
 
 	2.7. **Materialized Views**:
-   - PostgreSQL also supports **materialized views**, which store the result of the `SELECT` query physically on disk. 
+   - PostgreSQL also supports **materialized views**, which store the result of the `SELECT` query physically on disk.
    - This can improve performance for complex queries but requires manual or scheduled refreshing to keep the data up to date.
-   - see https://www.postgresql.org/docs/current/rules-materializedviews.html 
+   - see https://www.postgresql.org/docs/current/rules-materializedviews.html
    - A materialized view is a tool that allows queries that would otherwise take too long to complete quickly, at the price of working with slightly stale data. You use it if you cannot find a better solution.
 
 from https://www.postgresqltutorial.com/postgresql-views/postgresql-materialized-views/
@@ -159,8 +159,8 @@ To avoid this, you can use the CONCURRENTLY option.
 REFRESH MATERIALIZED VIEW CONCURRENTLY view_name;
 Code language: SQL (Structured Query Language) (sql)
 
-With the CONCURRENTLY option, PostgreSQL creates a temporary updated version of the materialized view, compares two versions, and performs INSERT and UPDATE only the differences.   
-   
+With the CONCURRENTLY option, PostgreSQL creates a temporary updated version of the materialized view, compares two versions, and performs INSERT and UPDATE only the differences.
+
 To make the process automatic, we can create a schedule or set the database triggers to execute the REFRESH command. For instance, you can create a trigger that launches the updating process when any changes take place in the tables that feed the materialized view. It synchronizes the data for all the users working with the tables.
 
 ### Pros and Cons of Materialized Views in PostgreSQL
@@ -290,13 +290,13 @@ You cannot directly "convert" a regular view to a materialized view. Instead, yo
 	------------------
 
 --- activity
-create a view on 
+create a view on
 
 3. Creating and Managing Views
    3.1. Basic View Creation
        - Syntax for CREATE VIEW
        - Selecting data from multiple tables
-   
+
 ```sql
 CREATE VIEW active_customers AS
 SELECT customer_id, name, email
@@ -308,7 +308,7 @@ In this example, `active_customers` is a view that shows only the active custome
 
 #### Usage:
 
-- **Querying a View**: 
+- **Querying a View**:
   ```sql
   SELECT * FROM active_customers;
   ```
@@ -344,8 +344,8 @@ WHERE status = 'active';
     No Aggregates or Grouping: Avoid using aggregate functions (SUM, COUNT, etc.), GROUP BY, DISTINCT, or similar operations that would make it unclear how to apply updates.
     Column Mapping: Each column in the view should directly correspond to a column in the base table.
     With CHECK OPTION: To ensure that any updates made through the view still satisfy the view's conditions, you can add WITH CHECK OPTION when creating the view.
-    
-	/3.5. updatable Views    
+
+	/3.5. updatable Views
 
 3. Materialized views
 
@@ -353,12 +353,12 @@ WHERE status = 'active';
 
 4. Hands-on Workshop
 
-working on the airdb database, 
+working on the airdb database,
 - simple view
 make a simple view, ... with a couple of joins on the base tables
 
 - complex view
-get some specific info, query is complex, CTE ... 
+get some specific info, query is complex, CTE ...
 write the query (long)
 
 create indexes as needed
@@ -366,7 +366,7 @@ create the query equivalent view
 update the data in the view ... make the view updatable if necessarry
 
 - update underlying table : add a new trip for a given user for instance
-check that the view is also updated 
+check that the view is also updated
 
 - restrict elements returned by the view
 
@@ -491,26 +491,26 @@ Functions in PostgreSQL are versatile and powerful, enabling you to create reusa
    3.1. Basic Function Creation
        - Syntax for CREATE FUNCTION
        - Defining input parameters and return types
-   
+
    3.2. Function Body
        - PL/pgSQL language basics
        - SQL functions vs. Procedural functions
-   
+
    3.3. Modifying Functions
        - CREATE OR REPLACE FUNCTION
-   
+
    3.4. Deleting Functions
        - DROP FUNCTION command
 
-       
-       
+
+
 ### Hands on
 
 scalar functions: stats on tables (number of trips, average price, diameter from circumference, or volume, -> closest tree <-)
 table valued functions: returns relations
 
 
-in the context of a query: 
+in the context of a query:
 select closes_tree() as neighbor_tree_id from ....
 update statstable set ... = function(), ... where id = ...
 
@@ -518,21 +518,21 @@ update statstable set ... = function(), ... where id = ...
 4. Types of Functions
    4.1. Scalar Functions
        - Returning single values
-   
+
    4.2. Table-Valued Functions
        - Returning result sets
-   
+
    4.3. Aggregate Functions
        - Creating custom aggregates
 
 5. Function Overloading
    5.1. Concept and Benefits
        - Multiple functions with the same name, different parameters
-   
+
    5.2. Implementation
        - Creating overloaded functions
        - How PostgreSQL chooses the appropriate function
-   
+
    5.3. Best Practices
        - When to use function overloading
        - Potential pitfalls and how to avoid them
@@ -540,11 +540,11 @@ update statstable set ... = function(), ... where id = ...
 6. Advanced Concepts
    6.1. Transaction Control
        - Managing transactions in functions
-   
+
    6.2. Exception Handling
        - RAISE statement
        - Custom exception handling
-   
+
    6.3. Security and Permissions
        - SECURITY DEFINER vs. SECURITY INVOKER
 
@@ -598,7 +598,7 @@ Would you like me to elaborate on any specific section or provide more details f
    2.1. What are Triggers?
        - Definition and purpose
        - Types of triggers (BEFORE, AFTER, INSTEAD OF)
-       - Event types (INSERT, UPDATE, DELETE, TRUNCATE) 
+       - Event types (INSERT, UPDATE, DELETE, TRUNCATE)
 
 Triggers in PostgreSQL:
 1. Triggers are database objects that automatically execute a function in response to certain events on a specified table or view.
@@ -628,9 +628,9 @@ Triggers in PostgreSQL:
 # 3. Stored Procedures
 ## 3.1. Introduction to Stored Procedures
 ## 3.2. Differences between Functions and Procedures
-   
-   
-In PostgreSQL, both stored procedures and functions allow you to encapsulate SQL logic and reuse it, but there are key differences between the two. 
+
+
+In PostgreSQL, both stored procedures and functions allow you to encapsulate SQL logic and reuse it, but there are key differences between the two.
 Here’s a breakdown of the differences:
 
 1. **Return Value:**
@@ -681,8 +681,8 @@ Here’s a breakdown of the differences:
    - **Functions:** Can be overloaded, meaning you can have multiple functions with the same name but different argument types.
    - **Procedures:** Also support overloading in PostgreSQL.
 
-In summary, functions are generally used for computations and returning data, while procedures are used for performing actions, especially those involving transaction control or complex business logic.   
-   
+In summary, functions are generally used for computations and returning data, while procedures are used for performing actions, especially those involving transaction control or complex business logic.
+
    3.3. Creating and Managing Stored Procedures
    3.4. Calling and Using Stored Procedures
    3.5. Advanced Topics in Stored Procedures
@@ -724,7 +724,7 @@ In summary, functions are generally used for computations and returning data, wh
 
 ----------------------------------
 # cloud
----------------------------------- 
+----------------------------------
 big query ? setup on VM ? ...
 
 
@@ -736,11 +736,39 @@ big query ? setup on VM ? ...
 ----------------------------------
 schemas and search path ?
 pg_hba and postgres.conf
-window functions 
+window functions
 
 
 ACID properties: https://www.geeksforgeeks.org/acid-properties-in-dbms/
 
 
+----------------------------------
+# Project / Exam
+----------------------------------
+
+see this example on a Kaggle dataset
+Complete guide to Database Normalization in SQL
+https://www.youtube.com/watch?v=rBPQ5fg_kiY
+
+Practice Writing SQL Queries using Real Dataset(Practice Complex SQL Queries)
+Olympic dataset
+https://www.youtube.com/watch?v=XruOBp7yPXU
 
 
+
+
+----------------------------------
+# Resources
+----------------------------------
+* Procedure Tutorial in SQL | SQL Stored Procedure | Procedure in SQL
+https://www.youtube.com/watch?v=yLR1w4tZ36I&t=425s
+
+* window function in SQL
+https://www.youtube.com/watch?v=Ww71knvhQ-s&
+
+longer version:
+https://www.youtube.com/watch?v=zAmJPdZu8Rg&
+
+* CTEs
+ SQL WITH Clause | How to write SQL Queries using WITH Clause | SQL CTE (Common Table Expression)
+https://www.youtube.com/watch?v=QNfnuK-1YYY

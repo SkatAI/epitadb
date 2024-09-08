@@ -640,3 +640,9 @@ see also the long list of availabe data types when adding a column in pgAdmin
 
 ![](./../../img/pgAdmin-add-column-data-types.png)
 
+# Resources on Normalization
+
+Excellent tutorial based on a Kaggle dataset example
+
+Complete guide to Database Normalization in SQL 
+https://www.youtube.com/watch?v=rBPQ5fg_kiY 
