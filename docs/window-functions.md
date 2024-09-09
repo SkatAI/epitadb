@@ -2,6 +2,10 @@
 
 scripts available in github ./sql/...
 
+
+
+see https://www.postgresql.org/docs/current/tutorial-window.html
+
 Day 3
 
 What are Window functions and when to use them

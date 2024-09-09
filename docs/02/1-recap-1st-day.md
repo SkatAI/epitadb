@@ -1,6 +1,6 @@
 # Connecting to postgres
 
-We want to have
+You should have
 
 - a running postgresql 16 or 15 install on your machine
 - pgAdmin installed
@@ -11,47 +11,40 @@ You connect to a postgres **server**
 
 On that server you may have zero, one or multiple databases.
 
-When you launch postgres on your local, you launch the postgres server.
+When you launch postgres on your local, you are actually launching the postgres server.
 
-You on the command line using psql or in pgAdmin
-
-
-#### Connecting on local server
-
-The host name is ```localhost``` 
-
-```psql -U postgres```
-
-if you do not specify the database name psql will try to connect to a database with the name of the user. 
-
+You connect and query the database on the command line using psql or in pgAdmin.
 
 
 
 ## Users
+
 The ```postgres``` user is the super user. 
 
 It can do anything on the server, create and manage databases, users, etc 
 
 Installing postgreSQL also creates a user with your machine user name : _username_
 
-The _username_ user is not as powerful as the postgres user
+The _username_ user is not as powerful as the _postgres_ user
 
-Attention, on mac, there is no postgres user. The superuser is your _username_
+Attention, on Nac, there is no _postgres_ user. The superuser is your _username_
+
+
 
 ## Connecting to the server
 
-You can connect in the terminal or using an app like pgAdmin
+You can connect in the terminal or with pgAdmin
 
 In the terminal you use ```psql``` to connect
 
 psql takes the following parameters
 
--U username
--h host (IP address or local host)
--p port
--d database_name
+* -U username
+* -h host (IP address or local host)
+* -p port
+* -d database_name
 
-port is by default 5432 and does not have to be specified each time.
+PostgreSQL port is by default 5432 and does not have to be specified each time.
 
 
 
@@ -62,10 +55,14 @@ to connect to a remote server IP: 123.456.789.246 same user and database
 > psql -U bob -h 123.456.789.246 -d treesdb
 
 
-to see your current user run 
+#### check your connection
+
+to see your current connection run 
+
 >  psql -c "\conninfo" 
 
-if it complains of not knowing the database, add the postgres database as the database name
+if it complains of not knowing the database, add the _postgres_ database as the database name
+
 > psql -c "\conninfo" -d postgres
 
 This should return: 
@@ -75,8 +72,15 @@ This should return:
 #### in pgAdmin, 
 
 Open pgAdmin
+
 b. Right-click on "Servers" in the left panel and choose "Create" > "Server..."
 c. In the "Create - Server" dialog:
+
+
+![](./../../img/pgAdmin_connect_add_server.png)
+
+
+
 
 **General tab**:
 
@@ -85,13 +89,17 @@ Name: Give it a name like "Local PostgreSQL"
 
 **Connection tab**:
 
-Host name/address: localhost
-Port: 5432 (default PostgreSQL port)
-Maintenance database: postgres 
-Username: [your_username] 
-Password: Leave blank if you haven't set one
+* Host name/address: localhost
+* Port: 5432 (default PostgreSQL port)
+* Maintenance database: postgres 
+* Username: [your_username] 
+* Password: Leave blank if you haven't set one
 
-to connect to a remote server, just change the connection tab parameters
+![](./../../img/pgAdmin_connect_to_server.png)
+
+
+
+to connect to a remote server, just change the connection tab parameters (host, user, password)
 
 #### On windows
 
@@ -119,9 +127,9 @@ The steps are
 
 
 
-# Load from a sql file
+# Restore a database from a _sql dump_
 
-find the treesdb.sql.gz file in the github repo
+find the treesdb_v01.sql.gz file in the github repo
 
 from the command line 
 > pg_dump -U alexis -d arbresdb -F c -Z 9 -f /Users/alexis/work/epitadb/data/treesdb.sql.gz

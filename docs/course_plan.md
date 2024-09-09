@@ -385,6 +385,8 @@ refesh the materialized view
 # Functions
 ----------------------------------
 
+https://www.postgresql.org/docs/current/plpgsql.html
+
 1. Introduction
    - Learning objectives: What students will gain from this class
    - Brief overview of functions in PostgreSQL
@@ -588,6 +590,7 @@ Would you like me to elaborate on any specific section or provide more details f
 ----------------------------------
 # Triggers and Stored procedures
 ----------------------------------
+https://www.postgresql.org/docs/current/triggers.html
 
 
 1. Introduction
@@ -714,12 +717,16 @@ In summary, functions are generally used for computations and returning data, wh
 
 ----------------------------------
 # Database Security
+# + Roles
 ----------------------------------
 
 
+https://www.postgresql.org/docs/current/client-authentication.html
 ----------------------------------
 # Maintenance and Monitoring
 ----------------------------------
+
+https://www.postgresql.org/docs/current/admin.html
 
 
 ----------------------------------
