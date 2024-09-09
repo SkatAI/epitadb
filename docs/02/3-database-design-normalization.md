@@ -2,18 +2,19 @@
 
 Goals of a good data structure design
 
-- Data Integrity: consistency, accuracy, avoiding anomalies
-- Query performance: fast data retrieval
-- Allow for future expansion of data types or relationships, evolution business requirements 
-- Scalability : growth in data volume
-- Storage : minimize data redundancy (also important for integrity)
+- **Data Integrity**: consistency, accuracy, avoiding anomalies
+- **Query performance**: fast data retrieval
+- Allow for future **expansion** of data types or relationships, evolution business requirements 
+- **Scalability** : growth in data volume
+- **Storage** : minimize data redundancy (also important for integrity)
 
-- Simplicity: Create an understandable structure for developers and analysts
+and :
+- **Simplicity**: Create an understandable structure for developers and analysts
 
 It always comes down to balancing between read and write performance
 
 
-How to design the data structure of a database ?
+**How to design the data structure of a database ?**
 
 # Some background and recap
 
@@ -29,17 +30,19 @@ and then
 - Denormalization when needed (OLAP)
 - Functional dependency
 
-Pratice:
+Practice:
 
-- we'll normalize the tree database
-- look at denormalization of the airdb database
+- we'll normalize the trees v01 database
+
 
 ---
 
 # Entity Relation Diagrams
 
 
-Peter Chen developed the ER diagram in 1976. 
+A dude called Peter Chen developed the ER diagram in 1976. 
+
+![](./../../img/1976-apple-1.jpg)
 
 The ER model was created to visualize data structures and relationships in many situations.
 
@@ -138,25 +141,21 @@ For each scenario, determine whether it's more suited for an OLTP (Online Transa
 - TikTok or Youtube analyzing which video types keep users watching longer.
 - A fitness app calculating your average daily steps for the past year.
 
+**solution**
 
-- OLTP: Liking a post is a simple, immediate transaction.
-- OLAP: Analyzing trends over time involves processing large amounts of historical data.
-- OLTP: Sending a message is a quick, individual transaction.
-- OLAP: Recommendations are based on analyzing viewing patterns across users and time.
-- OLTP: Placing an order is a specific, time-sensitive transaction.
-- OLTP: An in-app purchase is a single, immediate financial transaction.
-- OLAP: This involves analyzing user behavior patterns across many videos and users.
-- OLAP: Calculating long-term averages involves processing historical data over time.
+> your answers
 
 ---
 
 
-# choosing between 2 designs
+# Choosing between 2 designs
 
 **1 account table with multiple phones**
+
 ![](./../../img/design-1-table.png)
 
 **1 account table and 1 dedicated phone table**
+
 ![](./../../img/design-2-tables.png)
 
 which design (1 or 2 tables) is betterin terms of faster or simpler query for: 
@@ -198,7 +197,7 @@ With a dedicated phone table, the phone value depends only on the phone_id key :
 
 The idea of denormalization is to have data redundancy to simplify queries and make OLAP queries faster
 
-Redundant data : the same data / info exists in multiple tables
+**Redundant data** : the same data / info exists in multiple tables
 
 select queries may involve less joins but updates are more complex and data integrity is more complex to preserve.
 
@@ -222,8 +221,9 @@ To improve performance you can **denormalize** the Posts table by adding the `us
 | post_id | user_id | user_name | content        |
 |---------|---------|-----------|----------------|
 | 1       | 101     | Ulaf     | Hello world!   |
-| 2       | 102     | Brigitte       | Loving the sun |
-| 3       | 101     | Ulaf     | Great day!     |
+| 2       | 102     | Birgitte       | Loving the sun |
+| 3       | 103     | Inge     | Great day!     |
+| 4       | 114     | Boris     | When's the break?    |
 
 
 - Faster read performance: You can fetch the `user_name` along with the post data without needing to perform a join between the `Users` and `Posts` tables.
@@ -287,15 +287,17 @@ Consider now the following movies, directors, year and production house
 | 9       | Gully Boy               | Zoya Akhtar        | 2019         | Excel Entertainment   |
 | 10      | Zindagi Na Milegi Dobara | Zoya Akhtar        | 2011         | Excel Entertainment   |
 
-if one of the production house changes name, we need to update multiple rows
+(chatGPT knows Bollywood 😄)
 
-in a small example like this one this is not a problem since the query is trivial 
+If one of the production house changes its name, we need to update multiple rows
+
+In a small example like this one this is not a problem since the query is trivial 
 but in large databases some rows may not be updated 
 
-- human error when writing the update query or doing manual updates
--     Redundant Data: updating multiple rows _at the same time_  can cause performance issues in large databases with millions of records.
--     Data Locking: In a multi-user environment, updating several rows at once may lock parts of the database, affecting performance and potentially leading to delays in accessing data for other users or systems.
--     if changes are made in stages or asynchronously, data can temporarily or permanently enter an inconsistent state.
+- **human error** when writing the update query or doing manual updates
+-     **Redundant Data**: updating multiple rows _at the same time_  can cause performance issues in large databases with millions of records.
+-     **Data Locking**: In a multi-user environment, updating several rows at once may lock parts of the database, affecting performance and potentially leading to delays in accessing data for other users or systems.
+-     if changes are made in stages or **asynchronously**, data can temporarily or permanently enter an inconsistent state.
 
 
 Moving  the production house data in its own separate table, updating its name would only impact one row!
@@ -319,7 +321,7 @@ If for imperative reasons we want to scrape all records of the _War AI_ project 
 
 ## In short
 
-When you have different **natural entities** packed together in the same table, there will be anomalies and you need to normalize.
+When you have different **natural / logocal entities** packed together in the same table, there will be anomalies and you need to normalize.
 
 ---
 
@@ -337,11 +339,12 @@ Why is it a problem to have NULL values in a column?
 
 - **Violates normalization**: indicates poor database design or incomplete relationships.
 
-So avoid NULL values
+So avoid NULL values!
 
 ---
 
 # What about anomalies in the trees table ?
+
 What anomalies can you find for each type: insertion, update and deletion
 
 
@@ -423,7 +426,6 @@ More on 1NF :
 
 
 * Does the tree table follow 1NF ?
-* Do the tables of the airdb database all follow 1NF
 
 
 ## Wait, ... what ?
@@ -435,7 +437,6 @@ The rule of thumb is :
 > When you frequently need to access, modify, handle the elements of the sets of values for a given record then> apply 1NF
 
 It's a balance between simplicity and control
-
 
 For instance: 
 
@@ -454,12 +455,12 @@ For instance:
 
 The table is in 2NF iff :
 
-* is in 1NF 
-* has a single attribute unique identifier (UID)
-* every non key attribute is dependent on the entire UID
+* The table is in 1NF, 
+* it has a single attribute unique identifier (UID),
+* and every non key attribute is dependent on the entire UID
 
 
-Some cases of non compliance with 2NF
+Some cases of non-compliance with 2NF
 
 * Derived or calculated fields:
     * Relation: Employee(EmployeeID, Name, BirthDate, Age)
@@ -489,11 +490,11 @@ see :
 
 The tree table has many 2NF violations, since all the categorical columns are into a one to many (category has many trees) relation.
 
-2NF normalization tells us we should create a table for the categories. 
+2NF normalization tells us we should create a table for all the categorical columns. 
 
-But that feels overkill and instead of simplifying the logical structure of the data it complexifies it without clear gain
+But that feels overkill and instead of simplifying the logical structure of the data it complexifies it without clear gain.
 
-Keeping the categories in the tree table is a form of denormalization 
+Keeping the categories in the tree table is a form of denormalization.  
 
 ## When to apply 2NF to a categorical attribute ?
 
@@ -629,7 +630,7 @@ When to use:
 * For improving query performance by reducing joins.
 * When you want to enforce a structure on a group of related fields.
 
-# PostgresQL data types are many
+# Many available data types in PostgresQL
 
 There are many data types in postgreSQL
 
@@ -640,9 +641,4 @@ see also the long list of availabe data types when adding a column in pgAdmin
 
 ![](./../../img/pgAdmin-add-column-data-types.png)
 
-# Resources on Normalization
 
-Excellent tutorial based on a Kaggle dataset example
-
-Complete guide to Database Normalization in SQL 
-https://www.youtube.com/watch?v=rBPQ5fg_kiY 

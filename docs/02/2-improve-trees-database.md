@@ -1,5 +1,6 @@
-remarkable# Improving the trees dataset
-In this document we explore and improve the trees dataset that has been loaded from a sql dump.
+# Improving the trees dataset
+
+In this document we explore and improve the trees dataset treesdb_v01  that has been loaded from a sql dump.
 
 
 Here are the columns of the tree table
@@ -35,16 +36,18 @@ This is a good reflection of real world datasets that are never perfect.
 
 In this document we get a sense of the data, deal with some anomalies and transform the table with more appropriate data types.
 
-We also leverage the postGIS extension for spatial data.
+We also leverage the postGIS extension for spatial data. (in fact that is more complex than previously expected we'll see why)
 
 # data analysis
 
 Let's do some data analysis of the dataset.
 
-Looking at some samples with
+select a random row from the trees db 
+
+**solution**
 
 ```sql
-select * from trees order by random() limit 1;
+your query 
 ```
 
      Column     |       value
@@ -68,7 +71,6 @@ geo_point_2d   | 48.89291084026716, 2.359807495821241
 remarkable    | f
 
 
-
 We see that we have 
 
 - some categorical columns related to the location : domain, arrondissement
@@ -79,7 +81,6 @@ We see that we have
 - a ```remarkable``` flag
 - and geo location : geo_point_2d with latitude and longitude of each tree
 
-
 Let's query the tree table and get a feeling for the values of the different columns
 
 - how many trees per ```domain``` or ```arrondissement```
@@ -87,50 +88,53 @@ Let's query the tree table and get a feeling for the values of the different col
 - how many trees are remarkable ?
 - do all trees have a height and a circumference ?
 - what's the average height for different domain, stage or remarkable
+- what about the location_type and number columns ?
 
 any other thing you can think of ?
 
 # Where's the primary key ?
 
-The table loaded from a csv has no primary key although ```idbase``` seems like a candidate.
+The table loaded from a csv has no primary key although ```idbase``` seems like a good candidate. (after all it has _id_ in it... must mean something right ?)
 
 Could the ```idbase``` column be a primary key ?
 
 # What's a primary key and what is it used for ?
 
-A **primary key** in SQL (Structured Query Language) is a unique identifier for each record (or row) in a table. 
+A **primary key** in SQL  is a **unique** **identifier** for each record  in a table. 
 
-Its main purpose is to ensure that each record in the table can be uniquely identified. 
-
-A primary key is a constraint that enforces **uniqueness** and **non-nullability** for the column or columns it is applied to.
+A primary key is a **constraint** that enforces **uniqueness** and **non-nullability** for the column or *columns* it is applied to.
 
 Having a primary key allows databases to index the table more efficiently, making searches and retrievals faster when accessing records by their primary key value.
 
-In relational databases, primary keys are often used in conjunction with **foreign keys** in other tables. 
+#### foreign key
+In relational databases, primary keys are often used as **foreign keys** in other tables. 
+A **foreign key** is a column (or a combination of columns) that references a primary key in another table.
 
-A **foreign key** is a field (or a combination of fields) that references a primary key in another table.
-
+#### conditions for a primary key
+ 
 A column is a good candidate as a primary key if:
 
 - It contains unique values for each row.
 - It does not contain any NULL values.
+
+and 
+
 - It remains consistent and does not change often.
 
 ### SERIAL
 
-A primary key is usually also SERIAL. 
+A primary key is usually also **SERIAL**. 
 
->In PostgreSQL, SERIAL is a special data type used for **auto-incrementing** integer columns, commonly employed for primary keys.
+> In PostgreSQL, SERIAL is a special data type used for **auto-incrementing** integer columns, commonly employed for primary keys.
 
 
+> When you define a column with SERIAL, PostgreSQL automatically creates a **sequence** and sets it up so that each new row gets the next value from this sequence. (we'll come back to that in a moment)
 
-> When you define a column with SERIAL, PostgreSQL automatically creates a **sequence** and sets it up so that each new row gets the next value from this sequence.
-    
 --- 
+
 Based on this definition,  the ```idbase``` column be a good candidate for primary key ?
 
 Also, can it be serial ? 
-
 
 Let's check uniqueness of the values first : 
 
@@ -139,10 +143,7 @@ _Write a query to find out if some values of idbase have more than 2 rows_
 **solution:**
 
 ```sql
-SELECT idbase, COUNT(*)
-FROM trees
-GROUP BY idbase
-HAVING COUNT(*) > 1;
+your query 
 ```
 
 This query returns 2 rows
@@ -151,37 +152,39 @@ maybe these are exact duplicates of trees, let's check
 
 You can select the trees that have duplicates ```idbase``` with 
 
+**solution:**
+
 ```sql
-select * from trees where idbase in (select idbase from 
-(
-SELECT idbase, COUNT(*)
-FROM trees
-GROUP BY idbase
-HAVING COUNT(*) > 1
-)) order by idbase asc;
+your query 
 ```
 
-These trees have the exact same data except for heights and circumference which are  different. At this point there's no way to know which is the tree with the true values.
+These trees have the exact same data except for heights and circumference which are different. At this point there's no way to know which is the tree with the true values.
 
 So to make ```idbase``` the primary we would have to delete the duplicates.
 
 - Check for null values : does the idbase have null values ?
-
 - are the ```idbase``` values sequential ? (check min and max and total count of trees)
 
-Note: a SERIAL primary does not have to be sequential. 
+**Note**: a SERIAL primary does not have to be sequential. 
 
 
 So we have 2 options 
 
-- add a new column ```id``` as SERIAL primary key 
-- transform the ```idbase``` as SERIAL primary key
+- either add a new column ```id``` as SERIAL primary key 
+- or transform the ```idbase``` as SERIAL primary key
 
 The second option requires to 1) manually create a sequence, 2) delete some records. 
 
-The 1st option is the easiest one as  create the sequence automatically 
+The 1st option is the easiest one as create the sequence automatically  
+
+**Always be lazy when you can**
+
+(lazy = KISS attitude not _don't do the work_ attitude)
+ 
 
 so the easiest solution is to create a new serial primary key
+
+which we can do with 
 
 ```sql
 alter table trees add COLUMN id SERIAL PRIMARY KEY;
@@ -237,7 +240,7 @@ and
 
 
 
-notice the ```nextval('trees_id_seq'::regclass)``` which increments the counter in  the sequence each time it is called
+notice the ```nextval('trees_id_seq'::regclass)``` which increments the counter in the sequence each time it is called
 
 also notice the new index 
 
@@ -246,41 +249,45 @@ Indexes:
     "trees_pkey" PRIMARY KEY, btree (id)
 ```
 
-We can keep the ```idbase``` for future references but we will use ```id``` as the primary key.
+We shall keep the ```idbase``` column for future references but we will use ```id``` as the primary key.
 
 
 # Improving the column types
-At this point, all columns are ```varchar``` except for the height and circumference
 
-that does not make sense for  columns such as:  ```remarkable```, and geo_point_2d (latitude and longitude)
+At this point, all columns are ```varchar``` (synonym for ```text``` in postgresSQL) except for the height and circumference (integers)
 
-- ```remarkable``` should be a boolean
+
+
+that does not make sense for  columns such as:  ```remarkable```, or ```geo_point_2d``` (latitude and longitude)
+
+#### ```remarkable``` should be a boolean
+
+What are the values taken by ```remarkable``` ?
+
 
 How to transform the column which has 'NON', 'OUI; or '' (empty string) as boolean : t, f and null
 
+* create a new column ```remarkable_bool```
+* get the proper values in the new column from the old column 
+* drop the old column 
+* rename the new column into the old column name 
+
+**solution**
+
 ```sql
-ALTER TABLE trees ADD COLUMN remarkable_bool BOOLEAN;
-
-UPDATE trees
-SET remarkable_bool = 
-    CASE 
-        WHEN remarkable = 'OUI' THEN TRUE
-        WHEN remarkable = 'NON' THEN FALSE
-        WHEN remarkable = '' THEN NULL
-        ELSE NULL
-    END;
-
-ALTER TABLE trees DROP COLUMN remarkable;
-
-ALTER TABLE trees RENAME COLUMN remarkable_bool TO remarkable;
+your queries (4) 
 ```
 
 
-- ```geo_point_2d``` is a also varchar
+#### ```geo_point_2d``` is a also varchar
 
-```geo_point_2d``` holds the latitude and longitude of the trees. We could transform ```geo_point_2d``` as an array of floats. However there are specific data types for geo localisation. Using the proper data type will allow us to more easily carry out calculations specific to locations. For instance find the nearest trees, or calculate the distance between  trees.
+(_This is where it gets tricky with the postGIS extension_)
 
-We have a choice to use a native **POINT** data column (available by default in postgreSQL) or a **PostGIS** geography data type (needs the PostGIS extension)
+```geo_point_2d``` holds the latitude and longitude of the trees. We could transform ```geo_point_2d``` as an array of floats. However there are specific data types for geo localization. 
+
+Using the proper data type will allow us to more easily carry out calculations specific to locations. For instance find the nearest trees, or calculate the distance between  trees.
+
+We have a choice to use a native **POINT** data column (available by default in PostgreSQL) or a **PostGIS** geography data type (needs the PostGIS extension)
 
 ### Comparison between POINT and GEOGRAPHY
 
@@ -300,13 +307,14 @@ We have a choice to use a native **POINT** data column (available by default in 
 
 Let's use the extension PostGIS. 
 
-we won't go into details about PostGIS
+We won't go into details about PostGIS
 
-here is the site and a list of tutorials if you need to go deeper
+Here is the site and a list of tutorials if you need to go deeper
 
-[postgis documentation](https://postgis.net/documentation/training/) 
+[PostGIS documentation](https://postgis.net/documentation/training/) 
 
 
+### Install the PostGIS extension
 First we need to install the PostGIS extension if it's not installed yet. 
 
 Check if PostGIS is installed or not with
@@ -317,28 +325,7 @@ SELECT * FROM pg_extension WHERE extname = 'postgis';
 
 if this returns 0 rows you need to install PostGIS on the server and then activate it 
 
-### install PostGIS on mac
-
-```shell
-brew install postgis
-brew restart
-```
-
-
-### Note
-
-Installing postGIS with ```brew install postgis``` on Mac, requires postgres14. 
-If you have already installed postgres16, you'd have to install postgres14 and things will probably become messy
-
-An alternative is to use the Postgres app https://postgresapp.com/ that bundles postgres164 and postgis 3.4. 
-
-I haven't tried. This will probably also require to uninstall your the postgres already installed.
-
-So no quick and easy way to install postgis with postgres16 on Mac at this point.
-
-If you're in that situation (existing postgres16 on Mac) just switch to using the postgres native Point data type. see below 
-
-### install PostGIS  on Windows
+### install PostGIS on Windows
 
 Install PostGIS:
 
@@ -347,9 +334,10 @@ Install PostGIS:
 3. In the "Spatial Extensions" section, select PostGIS.
 4. Follow the prompts to download and install PostGIS.
 
+
 ### install PostGIS on Ubuntu or Debian
 
-first, always satrt with 
+first, always start with 
 ```shell
 sudo apt update 
 ```
@@ -372,13 +360,37 @@ and install the version that was found
 sudo apt install postgresql-16-postgis-3
 ```
 
-### activate the extension
+
+### install PostGIS on mac
+
+```shell
+brew install postgis
+brew restart
+```
+
+
+### Note
+
+Installing postGIS with ```brew install postgis``` on Mac, requires postgres14. The command will even install postgres@14 if it's not on the system. 
+
+If you have already installed postgres16, you'd have to install postgres14 and things will probably become messy
+
+An alternative is to use the [Postgres app](https://postgresapp.com/) that bundles postgres164 and postgis 3.4. 
+
+I haven't tried. This will probably also require to uninstall your the postgres already installed.
+
+So no quick and easy way to install postgis with postgres16 on Mac at this point.
+
+If you're in that situation (existing postgres16 on Mac) just switch to using the postgres native Point data type. see below 
+
+
+## activate the extension
+
 In the psql console activate the extension with:
 
 ```sql
 CREATE EXTENSION postgis;
 ```
-
 
 now connect with psql and check that postGis is installed
 
@@ -387,6 +399,12 @@ SELECT * FROM pg_extension WHERE extname = 'postgis';
 ```
 
 
+---
+what follows assumes you have postGIS extension installed and activated which is not the case for everyone (me included  ).
+
+Let's skip to the next section where we transform the geo_point_2d to a native POINT data type.
+
+---
 
 # Transform the geo_point_2d from varchar to GEOGRAPHY 
 
@@ -453,8 +471,8 @@ The query is a CTE or Common Table Expressions
 
 -> modify the query so that it takes a lat long instead of a tree_id
 
-you can use that address to lat long converter 
-https://www.latlong.net/convert-address-to-lat-long.html
+you can use that address to [lat long converter](https://www.latlong.net/convert-address-to-lat-long.html) 
+
 
 
 
@@ -488,46 +506,56 @@ LIMIT 5;
 
 # Transform the geo_point_2d from varchar to POINT
 
+Point is a native data type in postgres
+
+see https://www.postgresql.org/docs/16/datatype-geometric.html#DATATYPE-GEOMETRIC-POINTS
 
 * We add a column ```geolocation``` with type POINT.
-* Update the new column with POINT values  
+* Update the new column with POINT values  : use the functiosn ```TRIM(SPLIT_PART(geo_point_2d, ',', n))``` to extract the latitude and longitude 
 * delete the original ```geo_point_2d``` column
 
+**solution**
+
 ```sql
-ALTER TABLE trees ADD COLUMN geolocation POINT;
-
-UPDATE trees
-SET geolocation = point(
-    TRIM(SPLIT_PART(geo_point_2d, ',', 2))::float,
-    TRIM(SPLIT_PART(geo_point_2d, ',', 1))::float
-);
-
-ALTER TABLE trees DROP COLUMN geo_point_2d;
+your 4 queries
 ```
 
 Note that the lat and longitude have been swapped.
-
-We should verify that this makes sense (use google maps)
-
-
 
 * In geo_point_2d (String representation):
     * The order is typically (latitude, longitude). This is a common human-readable format, often used in everyday applications and GPS coordinates. 
 * In geolocation (Point data type):
     * The order is (x, y), which for geographic coordinates translates to (longitude, latitude). This is the standard for many geographic information systems and spatial databases. 
  
+We can verify that this makes sense (use google maps)
+
 
 ## Closest tree
-Given a tree index, find the N closest trees
+
+Given a tree index (id = 1234), find the N closest trees
+
+hints: 
+* calculate the euclidian distance between 2 points of coorddinates x, y : geolocation[0], geolocation[1]
+* at the Paris coordinates, 1 latitude degree is equivalent to 73km and 1 longitude degree = 111km.
+
+so to calculate the distance between A dn B with coords (a,b) and (c,d)
+
+d in meters = SQRT(
+    ((a - c) * 73000) ^2 
+    +
+    ((b - d) * 111000)^2
+) 
 
 
+
+**solution**
+
+N = 10
 
 ```sql
 
 WITH given_tree AS (
-  SELECT id, geolocation
-  FROM trees
-  WHERE id = 1234  
+    your query
 )
 SELECT 
   t.id, 
@@ -556,8 +584,13 @@ To finish our work on the trees table, we'd like to flag trees that have anomali
 
 So let's create a BOOLEAN column that indicates that there's an anomaly with a tree record.
 
+by the way: the circumference is in centimeters while the height is in meters
+and in the original dataset, both are recorded as ints (no decimal points are available)
+
+**solution**
+
 ```sql
-alter table trees add column anomaly bool default FALSE NOT NULL;
+your query
 ```
 
 Then find some weird trees
@@ -567,52 +600,50 @@ Then find some weird trees
 
 to find anomalies in the circumference, you can convert the circumference to the diameter with 
 
+**solution**
+
 ```sql
-select circumference / PI() as diameter from trees
+your query
 ```
 
 You create a new diameter column with
 
+**solution**
+
 ```sql
-alter table trees add column diameter float;
+your query
 ```
 
 and update the diameter column with 
+**solution**
+
 ```sql
-update trees 
-set diameter = circumference / PI();
+your query
 ```
 
 and find trees that have a insanely high diameter
 
-update the anomaly column with these trees
+Update the anomaly column with these trees
 
-also set the anomaly column to true for duplicates of idbase
+Also set the anomaly column to true for duplicates of ```idbase```
 
-are there other anomalies such as duplicates addresses or zero values for height or cicumference / diameter ?
+Are there other anomalies such as duplicates addresses or zero values for height or circumference / diameter ?
 
-To detect anomalies for a given column, you can get a good insight about a variable distribution by writing a query to find : min, max, average, median, 95 and 5 percentiles for a given float ccolumn. 
-this mimics the ```df.describe()``` in pandas dataframes.
+Although zero values for height and circumference could simply indicate a young small tree whose measures have been rounded down a bit harshly.
+
+To detect anomalies for a given column, you can get a good insight about a variable distribution by writing a query to find : min, max, average, median, 95 and 5 percentiles for a given float column. 
+this mimics the ```df.describe()``` in pandas data frames.
+
+You can use the function ```PERCENTILE_CONT(p)``` with ```p``` as the percentile value (0.5 for median, 0.9, 0.99 etc ...)
+
+**solution**
 
 ```sql
-SELECT
-    COUNT(diameter) AS count,
-    AVG(diameter) AS mean,
-    STDDEV(diameter) AS stddev,
-    MIN(diameter) AS min,
-    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY diameter) AS q05,
-    PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY diameter) AS q1,
-    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY diameter) AS median,
-    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY diameter) AS q3,
-    PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY diameter) AS q95,
-    PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY diameter) AS q99,
-    MAX(diameter) AS max
-FROM trees;
-
+your query
 ```
 
 
-It may be difficult to deciode if the height or diameter of a tree is an anomaly or not.
+It may be difficult to decide if the height or diameter of a tree is an anomaly or not.
 
 for instance the tree 187635 has a height of 98m. 
 
@@ -640,7 +671,7 @@ diameter       | 21.645072260497766
 geolocation    | (2.3591531336170086,48.89815810816667)
 
 
-that's a lot but is it a valid height for a  tree? Are they trees that tall in Paris ?
+that's a lot but is it a valid height for a tree? Are they trees that tall in Paris ?
 
 We can investigate in 2 ways 
 
@@ -667,35 +698,39 @@ SELECT
     )
   ) AS distance_meters
 FROM trees t, given_tree gt
---WHERE t.id != gt.id
+
 ORDER BY t.geolocation <-> gt.geolocation
 LIMIT 9;
 
 ```
 All surrounding trees have a height of 5 to 16 meters. So 98 meters is not a valid measurement.
 
-
-
  
 ### Solution
 
 the 100m threshold is arbitrary. For a real data analysis and we would have to find more relevant thresholds.
 
+**solution**
+
 ```sql
-update trees set anomaly = TRUE where (diameter > 100) or (height > 100);
+your query
 ```
 
 and to flag the trees with duplicate idabase
+
+**solution**
+
 ```sql
-update trees set anomaly = true where  idbase IN (
-    SELECT idbase
-    FROM trees
-    GROUP BY idbase
-    HAVING COUNT(*) > 1
-);
+your query
 ```
  
 In the end we have 851 trees with anomaly measurements.
+
+# Finally let's dump the database
+
+using pgAdmin
+
+...
 
 # Recap
 
@@ -704,7 +739,7 @@ The table loaded from the csv / sql dump was lacking a primary key, proper datat
 * We checked that the ```idbase``` column was not a good choice as a primary key
 * Transformed remarkable as a boolean data type, 
 * installed and activated the postgis extension (when possible)
-* which allowed us to transform the geo_point_2d into a postGIS GEOGRAPGY data type and find closest trees given a location
+* which allowed us to transform the geo_point_2d into a postGIS GEOGRAPHY data type and find closest trees given a location
 * we also looked at the native POINT data type
 * We identified the extreme or missing values of height, circumference and diameter of some trees and flagged these trees. 
 

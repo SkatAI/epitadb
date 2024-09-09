@@ -11,7 +11,7 @@ For each entity that you feel would benefit from a stand alone table, the proces
 
 The entity can be composed of multiple original columns. 
 For instance address and suppl_address
- 
+
 
 Here's an example with the ```name``` column
 
@@ -105,8 +105,7 @@ It makes sense to regroup all the columns associated with location of the tree.
 
 Note the weird format of the arrondissement and the lack of postal code 
 
-There is a national database of addresses called BAN (Base Nationale d'Adresse)
-available at https://adresse.data.gouv.fr/base-adresse-nationale
+There is a national database of addresses called BAN (Base Nationale d'Adresse) available at [adresse.data.gouv.fr/base-adresse-nationale](https://adresse.data.gouv.fr/base-adresse-nationale)
 
 It has an api and you can find an address given location coordinates
 
@@ -139,6 +138,7 @@ so you could sanitize the addresses by feeding the long, lat into the API, andd 
 
 
 ### domain & stage 
+
 **domain & stage** should be given their dedicated table even if they don't change often:
 
 * domain         | character varying
@@ -166,7 +166,7 @@ or
 
 ###  measurements
 
-Should the tree measurementts be kept in the trees table or should they have their own separate table ?
+Should the tree measurements be kept in the trees table or should they have their own separate table ?
 
 * circumference  | integer
 *  height         | integer
@@ -186,5 +186,8 @@ If the survey date was available then we could have multiple measures for a give
 
 In  our context (no date column), there's still a feeling that measurement is a logical / natural object by itself. 
 So I would give them a dedicated table.
+
+However since there is no date of each measurements, each tree has one unique set of measures that are not going to change often (guessing). So we can keep them in the trees table.
+
 
 

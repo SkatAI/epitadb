@@ -129,36 +129,80 @@ The steps are
 
 # Restore a database from a _sql dump_
 
-find the treesdb_v01.sql.gz file in the github repo
+Download the treesdb_v01.sql.gz file in the github repo
 
-https://github.com/SkatAI/epitadb/tree/master/data
+go to: https://github.com/SkatAI/epitadb/tree/master/data
+click right on the filename and ```save link as ```
 
+You can also clone the repo if you have git installed
 
-from the command line 
-> pg_dump -U alexis -d arbresdb -F c -Z 9 -f /Users/alexis/work/epitadb/data/treesdb.sql.gz
+> git clone git@github.com:SkatAI/epitadb.git
 
-or with pgAdmin: 
-* connect to local server (servername : localhost, username your_username, ...)
-* right click on server and > create > database
-* give it the name : treesdb and check the encoding is UTF8
-* Then right click on the treesdb databse 
+or just get the link to the file (click right on the filename and ```copy link```) and use curl or wget to download the file
+
+> wget https://github.com/SkatAI/epitadb/blob/master/data/treesdb_v01.sql.gz
+
+Once you have the file on your local you can restore it.
+
+But first you must create the database
+either in pgAdmin (click right on serrver name and create > database; check the encoding is UTF8) or with the query 
+```sql
+CREATE DATABASE treesdb_v01
+    WITH
+    OWNER = alexis
+    ENCODING = 'UTF8'
+    LOCALE_PROVIDER = 'libc'
+    CONNECTION LIMIT = -1
+    IS_TEMPLATE = False;
+```
+
+replace the owner name (alexis) with your username 
+
+The restore the database with
+
+In the terminal
+
+> pg_restore --username "your_username" --no-password --dbname "treesdb_v01" --section=pre-data --section=data --section=post-data --verbose "your path to/treesdb_v01.sql.gz"
+
+or in pgAdmin 
 
 In the restore dialog:
 
 * Set "Format" to "Custom or tar" 
-* Browse and select your dump file.
-* In the "Sections" tab, make sure "Pre-data", "Data", and "Post-data" are all checked.
-* In the "Options" tab, find "Do not save" and check the box next to "Owner".
-* Also in the "Options" tab, find "Schemas" and enter "public" in the text box (this ensures all objects are restored to the public schema).
+* Browse and select your dump file (treesdb_v01.sql.gz).
+* In the "Sections" tab, make sure "Pre-data", "Data", and "Post-data" are all checked. (not sure that's even required)
 
 
 # Check the data
 
-You should have a single table called trees with the columns you created.
+You should have a single table called trees with the columns we saw last week.
 
+```
+treesdb_v01=# \d trees
+                        Table "public.trees"
+     Column     |       Type        | Collation | Nullable | Default 
+----------------+-------------------+-----------+----------+---------
+ idbase         | integer           |           |          | 
+ location_type  | character varying |           |          | 
+ domain         | character varying |           |          | 
+ arrondissement | character varying |           |          | 
+ suppl_address  | character varying |           |          | 
+ number         | character varying |           |          | 
+ address        | character varying |           |          | 
+ id_location    | character varying |           |          | 
+ name           | character varying |           |          | 
+ genre          | character varying |           |          | 
+ species        | character varying |           |          | 
+ variety        | character varying |           |          | 
+ circumference  | integer           |           |          | 
+ height         | integer           |           |          | 
+ stage          | character varying |           |          | 
+ remarkable     | character varying |           |          | 
+ geo_point_2d   | character varying |           |          | 
 
+```
 
-# Changing the Encoding
+# Accents and the Encoding
 
 We need the database to be UTF8 encoded for the Paris trees data. 
 
@@ -174,22 +218,6 @@ you can also check that server, client and table are UTF8 encoded with
 > SHOW server_encoding;
 > SHOW client_encoding;
 > SELECT pg_encoding_to_char(encoding) FROM pg_database WHERE datname = 'treesdb';
-
-# 2nd Day start with
-
-* You have a running install of postgreSQL on your local 
-* You have pgAdmin installed
-
-
-Then 
-
-* Launch pgAdmin
-
-If the database ```treesdb``` already exists, delete it. (right click on the database name)
-
-Download the ```treesdb_v02.sql.gz``` file in the github repo. 
-
-> https://github.com/SkatAI/epitadb/blob/master/data/treesdb_v02.sql.gz
 
 
 This is a version of the database with the proper encoding. 

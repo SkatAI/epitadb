@@ -1,8 +1,8 @@
 # Let's normalize treesdb - solution
 
-Load the tressdb-v03.sql.gz file into pgAdmin
+Load the ```tressdb-v02.sql.gz``` file into pgAdmin
 
-The goal of this exercise is to transform the flat one table treesdb database into a fully normalized database by applying 1NF, 2NF and 3NF forms.
+The goal of this exercise is to transform the flat one table ```treesdb``` database into a fully normalized database by applying 1NF, 2NF and 3NF forms.
 
 For each entity that you feel would benefit from a stand alone table, the process is 
 
@@ -12,7 +12,7 @@ For each entity that you feel would benefit from a stand alone table, the proces
 3. delete the original column 
 
 The entity can be composed of multiple original columns. 
-For instance address and suppl_address
+For instance ```address``` and ```suppl_address```
 
 
 # Column grouping 
@@ -22,23 +22,23 @@ Here is the solution we will implement
 Keep the following columns in the trees table
 
 
-column | table
--- | --
- id | trees
-id_location  | trees
-idbase  | trees
-remarkable | trees
-anomaly | trees
+| column       | table  |
+|--------------|--------|
+| id           | trees  |
+| id_location  | trees  |
+| idbase       | trees  |
+| remarkable   | trees  |
+| anomaly      | trees  |
 
 
 Location related columns all go into a new ```location``` table
 
-column | table
--- | --
-address | location
-suppl_address | location
-arrondissement | location
-geolocation | location
+| column         | table    |
+|----------------|----------|
+| address        | location |
+| suppl_address  | location |
+| arrondissement | location |
+| geolocation    | location |
 
 
 ```domain``` has its own table
@@ -46,20 +46,10 @@ geolocation | location
 and ```stage``` also has its own table
 
 
-column | table
--- | --
-domain         | tree_domain
-stage          | tree_stage
-
-
-
-The tree measurements  have their own separate table ?
-
-column | table
--- | --
-* circumference  | measurement
-*  height         | measurement
-*  diameter       | measurement
+| column | table       |
+|--------|-------------|
+| domain | tree_domain |
+| stage  | tree_stage  |
 
 
 Finally the each column related to taxonomy will have its own table but the link between the trees and the taxonomy table will be kept in an intermediate table to keep the relation between the different taxonomy elements
@@ -74,9 +64,13 @@ CREATE TABLE tree_taxonomy (
 );
 ```
 
+We keep the tree measurements  in the trees table.
+
+
 # location
 
 Let's create a table locations with 
+
 ```sql
 create table locations (
     id serial primary key,
@@ -96,7 +90,7 @@ SELECT  suppl_address, address, arrondissement, geolocation
 FROM trees
 ```
 
-The we create the location_id foreign key
+Then we create the ```location_id``` foreign key
 
 ```sql
 ALTER TABLE trees
@@ -106,32 +100,12 @@ ADD COLUMN location_id INTEGER;
 
 --------
 
--- script to go from v03 to v04
---
 
--- create database
-CREATE DATABASE treesdb_v03
-    WITH
-    OWNER = alexis
-    ENCODING = 'UTF8'
-    LOCALE_PROVIDER = 'libc'
-    CONNECTION LIMIT = -1
-    IS_TEMPLATE = False;
+# normalize addresses
 
--- load v03
-pg_restore --host "localhost" --port "5432" --username "alexis" --no-password --dbname "treesdb_v03" --verbose "/Users/alexis/work/epitadb/data/treesdb_v03.sql.gz"
+**step 1: create the location address**
 
--- bump version
-
-update version set current = FALSE;
-insert into version (version, description, current) values ('03', 'normalized', TRUE);
-
--- also rename id_location to something less similar to location_id ...
-alter table trees rename column id_location id_location_legacy;
-
--- normalize addresses
-
--- step 1: create the location address
+```sql
 create table locations (
     id serial primary key,
     suppl_address  varchar,
@@ -139,12 +113,13 @@ create table locations (
     arrondissement varchar,
     geolocation    varchar
 );
+```
 
 
 
+**Step 2: Copy data from trees table to the new locations table**
 
--- Step 2: Copy data from trees table to the new locations table
-
+```sql
 INSERT INTO locations (suppl_address, address, arrondissement, geolocation)
 SELECT  suppl_address, address, arrondissement, geolocation
 FROM trees
@@ -152,27 +127,38 @@ WHERE suppl_address IS NOT NULL
    OR address IS NOT NULL
    OR arrondissement IS NOT NULL
    OR geolocation IS NOT NULL;
+```
 
--- Step 3: Add a location_id column to the trees table
+**Step 3: Add a location_id column to the trees table**
+
+```sql
 ALTER TABLE trees ADD COLUMN location_id INTEGER;
+```
 
--- step 4
--- connect location_id to location.id
--- it is not sufficient to connect on equality of geolocation sine there are multiple sequal geolocations (12 of them)
--- so we need identification on the whole address
+**step 4: connect location_id to location.id**
 
+- it is not sufficient to connect on equality of geolocation sine there are multiple equal geolocations (12 of them)
+-  so we need identification on the whole address
+
+```sql
 SELECT COUNT(*) as tree_count, geolocation::text
 FROM locations
 GROUP BY geolocation::text
 HAVING COUNT(*) > 1
 ORDER BY tree_count DESC;
+```
 
 
--- a quick check shows that geolocation duplicates all have the same address
+A quick check shows that geolocation duplicates all have the same address
+
+```sql
 select * from locations where geolocation::text in (SELECT  geolocation::text                                                   FROM locations                                                                                                                                GROUP BY geolocation::text
 HAVING COUNT(*) > 1) order by geolocation::text asc;
+```
 
--- so we can delete locations duplictaes with
+so we can delete locations duplicates with
+
+```sql
 WITH numbered_duplicates AS (
     SELECT id, geolocation,
            ROW_NUMBER() OVER (PARTITION BY geolocation::text ORDER BY id) as row_num
@@ -190,84 +176,132 @@ WHERE id IN (
     FROM numbered_duplicates
     WHERE row_num > 1
 );
+```
 
 
--- and check
+and check that the query  should return 0
+
+```sql
 SELECT COUNT(*) as tree_count, geolocation::text
 FROM locations
 GROUP BY geolocation::text
 HAVING COUNT(*) > 1
 ORDER BY tree_count DESC;
+```
 
--- should return 0
--- and the trees table has 12 more rows than the locations table
 
--- another way to avoind duplicates would have been to cast geolocation as text and use insert from select distinct in the query above and then to recast geolocation as point
+As expected the trees table has 12 more rows than the locations table.
 
--- so now we can associate trees location_id with location.id based on geolocation
+Note: Another way to avoid duplicates would have been to cast geolocation as text and use 
+```insert from select distinct``` in the query above and then to recast geolocation as point
+
+so now we can associate trees location_id with location.id based on geolocation
+
+```sql
 UPDATE trees t
 SET location_id = l.id
 FROM locations l
 WHERE (t.geolocation::text = l.geolocation::text );
+```
 
--- verify that 12 rows in trees have duoplicate location_id
+verify that 12 rows in trees have duplicate location_id
+
+```sql
 select count(*) as n, location_id from trees group by location_id having count(*) > 1;
+```
 
--- finally add foreign key constraint in the trees db
+finally add foreign key constraint in the trees db
+
+```sql
 ALTER TABLE trees
 ADD CONSTRAINT fk_location
 FOREIGN KEY (location_id)
 REFERENCES locations(id);
+```
 
+before dropping original columns make sure that the addresses and geolocation match
 
--- but dropping original columns make sure that the addresses and geolocation match
--- this query should return 0 rows
+this query should return 0 rows
 
+```sql
 select t.*, l.*
 from trees t
 join locations l on l.id = t.location_id
 where t.geolocation::text != l.geolocation::text
 limit 10;
+```
 
--- and drop location columns from trees
+Finally  drop location columns from trees
+
+```sql
 alter table trees drop column address;
 alter table trees drop column suppl_address;
 alter table trees drop column arrondissement;
 alter table trees drop column geolocation;
+```
 
+## domain and stage
 
--- domain and stage
+create the table ```tree_domains```
+
+```sql
 create table tree_domains(
     id serial primary key,
     domain varchar
 );
+```
 
+fill in data from trees into tree_domains
+
+```sql
 insert into tree_domains (domain)
 select distinct domain from trees
 where domain is not null;
+```
 
+add foreign key column in trees
+```sql
 ALTER TABLE trees ADD COLUMN domain_id INTEGER;
+```
 
+update tree_domains
+
+```sql
 UPDATE trees t
 SET domain_id = td.id
 FROM tree_domains td
 WHERE (t.domain = td.domain );
+```
 
+foreign key
+
+```sql
 ALTER TABLE trees
 ADD CONSTRAINT fk_tree_domain
 FOREIGN KEY (domain_id)
 REFERENCES tree_domains(id);
+```
 
+check 
 
-
+```sql
 select t.*
 from trees t
 join tree_domains td on td.id = t.domain_id
 where t.domain != td.domain;
+```
 
+
+drop domain column in trees
+
+```sql
 alter table trees drop column domain;
+```
 
---------
+
+Simlarly for stages 
+
+```sql
 create table tree_stages(
     id serial primary key,
     stage varchar
@@ -288,17 +322,24 @@ ALTER TABLE trees
 ADD CONSTRAINT fk_tree_stage
 FOREIGN KEY (stage_id)
 REFERENCES tree_stages(id);
+```
 
+check 
 
-
+```sql
 select t.*
 from trees t
 join tree_stages ts on ts.id = t.stage_id
 where t.stage != ts.stage;
+```
 
+drop column stage
+```sql
 alter table trees drop column stage;
+```
 
--- taxonomy
+
+## taxonomy
 
 -- Step 1: Create the new tables
 CREATE TABLE tree_names (
@@ -407,34 +448,4 @@ DROP COLUMN genre,
 DROP COLUMN species,
 DROP COLUMN variety;
 
-
---- measures
-
--- Step 1: Create the measures table
-CREATE TABLE tree_measures (
-    id SERIAL PRIMARY KEY,
-    tree_id INTEGER REFERENCES trees(id),
-    height INTEGER,
-    diameter DOUBLE PRECISION,
-    circumference INTEGER,
-    measurement_date DATE DEFAULT CURRENT_DATE,
-    UNIQUE (tree_id, measurement_date)
-);
-
--- Step 2: Insert existing data into the measures table
-INSERT INTO tree_measures (tree_id, height, diameter, circumference)
-SELECT id, height, diameter, circumference
-FROM trees
-WHERE height IS NOT NULL OR diameter IS NOT NULL OR circumference IS NOT NULL;
-
-
--- Step 4 (: Create an index on tree_id for better query performance
-CREATE INDEX idx_tree_measures_tree_id ON tree_measures(tree_id);
-
-
--- Step 3: Remove measurement columns from the trees table
-ALTER TABLE trees
-DROP COLUMN height,
-DROP COLUMN diameter,
-DROP COLUMN circumference;
 

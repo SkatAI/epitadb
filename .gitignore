@@ -2,7 +2,7 @@
 .ipynb_checkpoints/
 
 # Ignored File Types
-*.pdf
+
 *.xlsx
 *.pkl
 *.json
@@ -29,3 +29,5 @@ qr/*.png
 img/*.png
 
 videos/
+docs/02-solutions
+docs/wip
