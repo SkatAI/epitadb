@@ -131,6 +131,9 @@ The steps are
 
 find the treesdb_v01.sql.gz file in the github repo
 
+https://github.com/SkatAI/epitadb/tree/master/data
+
+
 from the command line 
 > pg_dump -U alexis -d arbresdb -F c -Z 9 -f /Users/alexis/work/epitadb/data/treesdb.sql.gz
 
