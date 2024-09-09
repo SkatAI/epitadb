@@ -401,6 +401,7 @@ Functions in PostgreSQL are user-defined routines that encapsulate a sequence of
    - Functions allow you to encapsulate and reuse SQL queries and logic. This helps to maintain a DRY (Don't Repeat Yourself) codebase, as you can define the logic once in a function and call it multiple times.
 
 2. **Return Types**:
+
    - **Scalar Functions**: Return a single value, such as an integer, text, date, etc.
    - **Table Functions**: Return a set of rows, behaving like a table in a query.
    - **Void Functions**: Perform actions without returning a value.
