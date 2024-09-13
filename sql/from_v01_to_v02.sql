@@ -5,11 +5,13 @@
 -- add diameter flag
 -- adds anomaly flag
 
+-- set the host IP address when accessing the remote postgresql server
+export PGHOST=$(gcloud compute instances describe epitadb-permanent --zone us-central1-c --format="get(networkInterfaces[0].accessConfigs[0].natIP)")
+echo $PGHOST
+
 
 """
 This script can be run in pgAdmin or in psql
-
-
 """
 
 
@@ -29,7 +31,7 @@ CREATE DATABASE treesdb_v02
 
 -- load backup of v01 into v02 as a starting point
 
-pg_restore -h 23.236.58.49 \
+pg_restore -h $PGHOST \
 -d "treesdb_v02" \
 -U epita \
 --no-owner \
@@ -44,8 +46,8 @@ pg_restore -h 23.236.58.49 \
 "/Users/alexis/work/epitadb/data/treesdb_v01.08.sql.backup"
 
 -- check that the data is there
-psql -h 23.236.58.49 -U epita -d treesdb_v02 -c "select count(*) from trees;"
-psql -h 23.236.58.49 -U epita -d treesdb_v02 -c "select * from trees order by random() limit 1;"
+psql -h $PGHOST -U epita -d treesdb_v02 -c "select count(*) from trees;"
+psql -h $PGHOST -U epita -d treesdb_v02 -c "select * from trees order by random() limit 1;"
 
 -- or in psql
 \d
@@ -125,7 +127,7 @@ alter table trees drop column number;
 -- dump db in treesdb_v02.01.sql.gz
 -- replace epita with your username
 
-pg_dump  -h 23.236.58.49 \
+pg_dump  -h $PGHOST \
 -d "treesdb_v02" \
 -U epita \
 --file "/Users/alexis/work/epitadb/data/treesdb_v02.01.sql.backup" \

@@ -3,10 +3,16 @@ script to go from v02 to v03
 denormalization
 """
 
+-- set the host IP address when accessing the remote postgresql server
+-- export PGHOST=$(gcloud compute instances describe epitadb-permanent --zone us-central1-c --format="get(networkInterfaces[0].accessConfigs[0].natIP)")
+-- echo $PGHOST
+
+
 -- uncomment if you want 1) create the database v03 from scratch and restore the data from the data dump
 """
 -- create database
-drop  database  if exists treesdb_v03 with(force) ;
+
+DROP database if exists treesdb_v03 WITH(force) ;
 
 CREATE DATABASE treesdb_v03
     WITH
@@ -17,7 +23,8 @@ CREATE DATABASE treesdb_v03
     IS_TEMPLATE = False;
 
 -- load treesdb_v02.01.sql.backup into treesdb_v03
-pg_restore -h 23.236.58.49 \
+
+pg_restore -h $PGHOST \
 -d treesdb_v03 \
 -U epita \
 --no-owner \
@@ -31,6 +38,10 @@ pg_restore -h 23.236.58.49 \
 --single-transaction \
 /Users/alexis/work/epitadb/data/treesdb_v02.01.sql.backup
 """
+
+'''
+psql -h $PGHOST -U epita -d treedb_v03 -c "select * from trees order by random() limit 1;"
+'''
 
 -- bump version table
 
@@ -66,14 +77,63 @@ ADD CONSTRAINT fk_tree_domain
 FOREIGN KEY (domain_id)
 REFERENCES tree_domains(id);
 
+-- check that all domain in trees have a record in td.domain
 
-
-select t.*
+select t.id
 from trees t
 join tree_domains td on td.id = t.domain_id
 where t.domain != td.domain;
 
+-- check that the query returns 0 rows
+CREATE OR REPLACE FUNCTION assert_zero_rows(query TEXT)
+RETURNS VOID AS $$
+DECLARE
+    row_count INT;
+BEGIN
+    -- Dynamically execute the input query and count the number of rows
+    EXECUTE format('SELECT COUNT(*) FROM (%s) AS subquery', query) INTO row_count;
+
+    -- Raise an exception if the query returns any rows
+    IF row_count > 0 THEN
+        RAISE EXCEPTION 'Assertion failed: Query returned % rows, but expected 0', row_count;
+    ELSE
+        RAISE NOTICE 'Assertion passed: Query returned 0 rows as expected.';
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+select assert_zero_rows('select t.id
+from trees t
+join tree_domains td on td.id = t.domain_id
+where t.domain != td.domain');
+
+
+-- now we can drop the column domain from trees
+
 alter table trees drop column domain;
+
+-- how do we now get the domain for a given tree ?
+-- simple join
+
+select t.*, td.*
+from trees t
+join tree_domains td on t.domain_id = td.id
+order by random()
+limit 1;
+
+-- what is the differemce woith this query ?
+
+select t.*, td.*
+from (
+    select *
+    from trees
+    order by random()
+    limit 1
+) t
+join tree_domains td on t.domain_id = td.id;
+
+-- now let's do the same things for stage
+-- don't forget to checking hte mapping before deleting the stage column
 
 -------- stages
 create table tree_stages(
@@ -97,14 +157,32 @@ ADD CONSTRAINT fk_tree_stage
 FOREIGN KEY (stage_id)
 REFERENCES tree_stages(id);
 
+-- check
+-- reuse the previous function
 
-
-select t.*
+select assert_zero_rows('select t.id
 from trees t
 join tree_stages ts on ts.id = t.stage_id
-where t.stage != ts.stage;
+where t.stage != ts.stage');
 
+
+
+-- now drop the stage column
 alter table trees drop column stage;
+
+-- how do we get the stage and domain for a given random tree ?
+select t.*, td.*, ts.*
+from (
+    select *
+    from trees
+    order by random()
+    limit 1
+) t
+join tree_domains td on t.domain_id = td.id
+join tree_stages ts on t.stage_id = ts.id
+;
+
+
 
 -- ---------------------------------------
 -- taxonomy: names, genres, species, varieties
@@ -114,7 +192,7 @@ alter table trees drop column stage;
 -- ---------------------------------------
 
 -- Step 1: Create the new tables
-CREATE TABLE tree_taxonomy (
+CREATE TABLE taxonomy (
     id SERIAL PRIMARY KEY,
     name_id INTEGER REFERENCES tree_names(id),
     genre_id INTEGER REFERENCES tree_genres(id),
@@ -146,24 +224,45 @@ CREATE TABLE tree_varieties (
 );
 
 -- Step 2: Insert data into the new tables
+-- How to modify the query so that the names, genres, ...
+-- in the tree_names, tree_genres tables are ordered by their frequency in the trees table ?
+-- or ordered in the alphabetiocal order ?
+
+
 INSERT INTO tree_names (name)
 SELECT DISTINCT name FROM trees
-WHERE name IS NOT NULL;
+WHERE name IS NOT NULL
+order by name asc;
 
+-- INSERT INTO tree_genres (genre)
+-- SELECT DISTINCT genre FROM trees
+-- WHERE genre IS NOT NULL;
+
+-- becomes
 INSERT INTO tree_genres (genre)
-SELECT DISTINCT genre FROM trees
-WHERE genre IS NOT NULL;
+SELECT genre
+FROM (
+    SELECT genre, COUNT(*) as frequency
+    FROM trees
+    WHERE genre IS NOT NULL
+    GROUP BY genre
+    ORDER BY frequency DESC
+) as ordered_genres;
+
 
 INSERT INTO tree_species (species)
 SELECT DISTINCT species FROM trees
-WHERE species IS NOT NULL;
+WHERE species IS NOT NULL
+order by species asc;
 
 INSERT INTO tree_varieties (variety)
 SELECT DISTINCT variety FROM trees
-WHERE variety IS NOT NULL;
+WHERE variety IS NOT NULL
+order by variety asc;
 
--- Step 3: Insert data into the tree_taxonomy table
-INSERT INTO tree_taxonomy (name_id, genre_id, species_id, variety_id)
+
+-- Step 3: Insert data into the taxonomy table
+INSERT INTO taxonomy (name_id, genre_id, species_id, variety_id)
 SELECT DISTINCT
     n.id AS name_id,
     g.id AS genre_id,
@@ -176,13 +275,13 @@ LEFT JOIN tree_genres g ON t.genre = g.genre
 LEFT JOIN tree_species s ON t.species = s.species
 LEFT JOIN tree_varieties v ON t.variety = v.variety;
 
--- Step 4: Add tree_taxonomy_id column to the trees table
-ALTER TABLE trees ADD COLUMN tree_taxonomy_id INTEGER;
+-- Step 4: Add taxonomy_id column to the trees table
+ALTER TABLE trees ADD COLUMN taxonomy_id INTEGER;
 
--- Step 5: Update the trees table with the corresponding tree_taxonomy_id
+-- Step 5: Update the trees table with the corresponding taxonomy_id
 UPDATE trees t
-SET tree_taxonomy_id = tt.id
-FROM tree_taxonomy tt
+SET taxonomy_id = tt.id
+FROM taxonomy tt
 LEFT JOIN tree_names n ON tt.name_id = n.id
 LEFT JOIN tree_genres g ON tt.genre_id = g.id
 LEFT JOIN tree_species s ON tt.species_id = s.id
@@ -195,23 +294,25 @@ WHERE
 
 -- Step 6: Add foreign key constraint to the trees table
 ALTER TABLE trees
-ADD CONSTRAINT fk_tree_taxonomy
-FOREIGN KEY (tree_taxonomy_id)
-REFERENCES tree_taxonomy(id);
+ADD CONSTRAINT fk_taxonomy
+FOREIGN KEY (taxonomy_id)
+REFERENCES taxonomy(id);
 
 -- step check
 
+select assert_zero_rows('
 select t.*
 from trees t
-join tree_taxonomy tt on tt.id = t.tree_taxonomy_id
+join taxonomy tt on tt.id = t.taxonomy_id
 join tree_names tn on tn.id = tt.name_id
-where t.name != tn.name;
+where t.name != tn.name');
 
+select assert_zero_rows('
 select t.*
 from trees t
-join tree_taxonomy tt on tt.id = t.tree_taxonomy_id
+join taxonomy tt on tt.id = t.taxonomy_id
 join tree_species tn on tn.id = tt.species_id
-where t.species != tn.species;
+where t.species != tn.species');
 
 
 
@@ -223,6 +324,22 @@ DROP COLUMN species,
 DROP COLUMN variety;
 
 
+-- query
+-- how to order the variety by their freqnecy in the trees table
+
+SELECT
+    tv.variety,
+    COUNT(t.id) AS variety_count
+FROM
+    trees t
+JOIN
+    taxonomy tax ON t.taxonomy_id = tax.id
+JOIN
+    tree_varieties tv ON tax.variety_id = tv.id
+GROUP BY
+    tv.variety
+ORDER BY
+    variety_count DESC;
 
 
 
@@ -327,12 +444,12 @@ REFERENCES locations(id);
 
 -- before dropping original columns make sure that the addresses and geolocation match
 -- this query should return 0 rows
-
+select assert_zero_rows('
 select t.*, l.*
 from trees t
 join locations l on l.id = t.location_id
 where t.geolocation::text != l.geolocation::text
-limit 10;
+limit 10');
 
 -- and drop location columns from trees
 alter table trees drop column address;
@@ -390,7 +507,7 @@ DROP COLUMN circumference;
 -- dump db in treesdb_v02.01.sql.gz
 -- replace epita with your username
 
-pg_dump  -h 23.236.58.49 \
+pg_dump  -h $PGHOST \
 -d "treesdb_v03" \
 -U epita \
 --file "/Users/alexis/work/epitadb/data/treesdb_v03.01.sql.backup" \
@@ -407,5 +524,21 @@ pg_dump  -h 23.236.58.49 \
 --section=data \
 --section=post-data
 
+-- -----------------------------
+-- if you need to restore treesdb_v03.01.sql.backup into an empty treesdb_v03 database
+-- -----------------------------
 
 
+pg_restore -h $PGHOST \
+-d treesdb_v03 \
+-U epita \
+--no-owner \
+--no-privileges \
+--no-data-for-failed-tables \
+--section=pre-data \
+--section=data \
+--section=post-data \
+--verbose \
+--exit-on-error  \
+--single-transaction \
+/Users/alexis/work/epitadb/data/treesdb_v03.01.sql.backup

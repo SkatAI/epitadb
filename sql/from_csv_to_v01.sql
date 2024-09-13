@@ -1,6 +1,12 @@
 -- script to load the data from the csv file les_arbres_upload_v02.csv
 -- file is UTF8, proper comma delimiter and line returns, proper headers
 
+-- set the host IP address when accessing the remote postgresql server
+
+export PGHOST=$(gcloud compute instances describe epitadb-permanent --zone us-central1-c --format="get(networkInterfaces[0].accessConfigs[0].natIP)")
+echo $PGHOST
+
+
 -- create database
 CREATE DATABASE treesdb_v01
     WITH
@@ -78,12 +84,14 @@ pg_dump --file "/Users/alexis/work/epitadb/data/treesdb_v01.08.sql.backup" \
 
 
 -- --------------------------------
--- restore database treesdb_v01 from this version treesdb_v01.08.sql.backup
+-- RESTORE treesdb_v01 from  treesdb_v01.08.sql.backup
 -- connect to the remote or local database
 -- start with fresh empty database treesdb_v01
 -- --------------------------------
+
 \c postgres
-drop  database  if exists treesdb_v01 with(force) ;
+
+drop database if exists treesdb_v01 with(force) ;
 
 CREATE DATABASE treesdb_v01
     WITH
@@ -93,14 +101,12 @@ CREATE DATABASE treesdb_v01
     CONNECTION LIMIT = -1
     IS_TEMPLATE = False;
 
-\c treesdb_v01
-
 -- check that \d returns no relations
 
 -- restore the tables from treesdb_v01.08.sql.backup
 -- from the terminal, on the remote server
 
-pg_restore -h 23.236.58.49 \
+pg_restore -h $PGHOST \
 -d "treesdb_v01" \
 -U epita \
 --no-owner \
@@ -115,8 +121,8 @@ pg_restore -h 23.236.58.49 \
 "/Users/alexis/work/epitadb/data/treesdb_v01.08.sql.backup"
 
 -- check that the data is there
-psql -h 23.236.58.49 -U epita -d treesdb_v01 -c "select count(*) from trees;"
-psql -h 23.236.58.49 -U epita -d treesdb_v01 -c "select * from trees order by random() limit 1;"
+psql -h $PGHOST -U epita -d treesdb_v01 -c "select count(*) from trees;"
+psql -h $PGHOST -U epita -d treesdb_v01 -c "select * from trees order by random() limit 1;"
 
 
 
