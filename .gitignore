@@ -24,6 +24,16 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# specific large datafiles
+data/treesdb_v01.02.sql
+data/treesdb_v01.03.sql.gz
+data/treesdb_v01.04.sql
+data/treesdb_v01.05.sql
+data/treesdb_v01.05.sql.backup
+data/treesdb_v01.06.sql
+data/treesdb_v01.06.sql.backup
+data/treesdb_v01.07.sql
+
 # other
 qr/*.png
 img/*.png
