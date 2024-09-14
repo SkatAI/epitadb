@@ -198,8 +198,46 @@ Note the weird format of the ```arrondissement```, the lack of postal code etc .
 ### Reconciling keys
 
 One step in the normalization process consists in reconciling the keys by matching the value of the fields in the main and secondary tables.
+For the locations table we could assume that each trees has a unique geolocation. And we would be wrong!
 
-...
+There are 12 geolocation duplicates in the trees table. 
+
+```sql
+SELECT COUNT(*) as tree_count, geolocation::text
+FROM locations
+GROUP BY geolocation::text
+HAVING COUNT(*) > 1
+ORDER BY tree_count DESC;
+```
+
+A quick check will show that geolocation duplicates all have the same address. So we can delete these duplicates and fall back to reconciling the keys based on the geolocation points.
+
+The sql to delete the geolocation duplicates is more complex. 
+
+```sql
+WITH numbered_duplicates AS (
+    SELECT id, geolocation,
+           ROW_NUMBER() OVER (PARTITION BY geolocation::text ORDER BY id) as row_num
+    FROM locations
+    WHERE geolocation::text IN (
+        SELECT geolocation::text
+        FROM locations
+        GROUP BY geolocation::text
+        HAVING COUNT(*) > 1
+    )
+)
+DELETE FROM locations
+WHERE id IN (
+    SELECT id
+    FROM numbered_duplicates
+    WHERE row_num > 1
+);
+```
+
+Note: Another way to avoid duplicates is to cast geolocation as text and use 
+```insert from select distinct``` in the insert query and then to recast geolocation as point. 
+That may be simpler. 
+
 
 
 ### the BAN

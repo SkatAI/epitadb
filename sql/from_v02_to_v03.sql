@@ -121,7 +121,7 @@ join tree_domains td on t.domain_id = td.id
 order by random()
 limit 1;
 
--- what is the differemce woith this query ?
+-- what is the differemce with this query ?
 
 select t.*, td.*
 from (
