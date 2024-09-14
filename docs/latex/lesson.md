@@ -9,21 +9,23 @@ Goals of a good data structure design
 - **Storage** : minimize data redundancy (also important for integrity)
 
 and :
+
 - **Simplicity**: Create an understandable structure for developers and analysts
 
-as we will see it always comes down to balancing between read and write performance
+It always comes down to balancing between read and write performance
 
 
 **How to design the data structure of a database ?**
 
-# Scope
+# Some background and recap
 
-quick recap :
+quick recap:
 
 - Entity-Relationship Diagrams : ERDs
 - 1-1, 1-many, many-many relations
 
-and then
+and then:
+
 - OLAP vs OLTP databases and design strategies
 - Normalization
 - anomalies to detect the need for normalization
@@ -36,7 +38,7 @@ Practice:
 - we'll normalize the trees v01 database
 
 
----
+
 
 # Entity Relation Diagrams
 
@@ -143,14 +145,8 @@ For each scenario, determine whether it's more suited for an OLTP (Online Transa
 - A fitness app calculating your average daily steps for the past year.
 
 **solution**
-- OLTP: Liking a post is a simple, immediate transaction.
-- OLAP: Analyzing trends over time involves processing large amounts of historical data.
-- OLTP: Sending a message is a quick, individual transaction.
-- OLAP: Recommendations are based on analyzing viewing patterns across users and time.
-- OLTP: Placing an order is a specific, time-sensitive transaction.
-- OLTP: An in-app purchase is a single, immediate financial transaction.
-- OLAP: This involves analyzing user behavior patterns across many videos and users.
-- OLAP: Calculating long-term averages involves processing historical data over time.
+
+> your answers
 
 ---
 
@@ -158,9 +154,11 @@ For each scenario, determine whether it's more suited for an OLTP (Online Transa
 # Choosing between 2 designs
 
 **1 account table with multiple phones**
+
 ![](./../../img/design-1-table.png)
 
 **1 account table and 1 dedicated phone table**
+
 ![](./../../img/design-2-tables.png)
 
 which design (1 or 2 tables) is betterin terms of faster or simpler query for:
@@ -225,10 +223,10 @@ To improve performance you can **denormalize** the Posts table by adding the `us
 
 | post_id | user_id | user_name | content        |
 |---------|---------|-----------|----------------|
-| 1       | 101     | Ulaf     | Hello world!   |
-| 2       | 102     | Birgitte       | Loving the sun |
-| 3       | 103     | Inge     | Great day!     |
-| 4       | 114     | Boris     | When's the break?    |
+| 1       | 101     | Ulaf      | Hello world!   |
+| 2       | 102     | Birgitte  | Loving the sun |
+| 3       | 103     | Inge      | Great day!     |
+| 4       | 114     | Boris     | When's the break?  |
 
 
 - Faster read performance: You can fetch the `user_name` along with the post data without needing to perform a join between the `Users` and `Posts` tables.
@@ -282,7 +280,6 @@ Consider now the following movies, directors, year and production house
 | Film_ID | Film_Name               | Director_Name      | Release_Year | Production_House     |
 |---------|-------------------------|--------------------|--------------|----------------------|
 | 1       | Sholay                  | Ramesh Sippy       | 1975         | Sippy Films           |
-| 2       | Dilwale Dulhania Le Jayenge | Aditya Chopra   | 1995         | Yash Raj Films        |
 | 3       | Kabhi Khushi Kabhie Gham | Karan Johar        | 2001         | Dharma Productions    |
 | 4       | Kuch Kuch Hota Hai       | Karan Johar        | 1998         | Dharma Productions    |
 | 5       | Lagaan                  | Ashutosh Gowariker | 2001         | Aamir Khan Productions|

@@ -1,8 +1,14 @@
-# Let's normalize treesdb
+# Normalize treesdb
 
-The goal of this exercise is to transform the flat one table treesdb database into a fully normalized database by applying 1NF, 2NF and 3NF forms.
+## Context
+In this document we are working with the treesdb_v02 database. 
+If you haven't done so already, connect to your local postgreSQL server and load the file 
 
-For each entity that you feel would benefit from a stand alone table, the process is 
+
+
+The goal of this exercise is to transform the flat one table ```treesdb``` database into a fully normalized database by applying 1NF, 2NF and 3NF forms.
+
+For each entity that you feel would benefit from having a dedicated table, the process is:
 
 1. create a new table with a primary key
 2. inserts values from the trees column 
@@ -10,44 +16,56 @@ For each entity that you feel would benefit from a stand alone table, the proces
 3. delete the original column 
 
 The entity can be composed of multiple original columns. 
-For instance address and suppl_address
+For instance, it makes sense to regroup  ```address``` and ```suppl_address``` in a ```location``` table.
 
 
-Here's an example with the ```name``` column
+# Example with ```name``` 
 
-* create a new table called ```name```
+The ```name``` column in the trees table is a categorical column. 
+
+* the most frequent tree name is **Platane** with 42841 occurences followed by 24945 marronniers
+and  22317 tilleuls. 
+* 28 names have correspond to one tree. Deletion anomaly
+* 186 names occur more than once. Update anomaly
+* 1339 trees have a NULL value for ```name```
+
+A good candidate for normalization. 
+
+
+* First create a new table called ```tree_names```. Very simple, only one column ```name```
 
 ```sql
-create table tree_name (
+create table tree_names (
     id serial primary key,
     name varchar unique not null   
 )
-
 ```
 
-Note the unique and not null constraints 
+Note the ```unique``` and ```not null``` constraints. Having null values in the ```tree_names``` table would defeat (one of) the purpose of normalization.
 
-* inserts values from the trees column 
+
+* Then inserts values from the trees column 
 
 ```sql
-INSERT INTO tree_name (name)
+INSERT INTO tree_names (name)
 SELECT DISTINCT name
 FROM trees
 WHERE name IS NOT NULL;
 ```
 
-* add the foreign key in the trees table
+
+* create a foreign key in the trees table: ```name_id```
 
 ```sql
 ALTER TABLE trees ADD COLUMN name_id INTEGER;
 ```
 
-* update the foreign key column with the correct IDs
+* then update the foreign key column with the correct IDs: ```trees.name_id <-> tree_namess.id```
 
 ```sql
 UPDATE trees t
 SET name_id = tn.id
-FROM tree_name tn
+FROM tree_names tn
 WHERE t.name = lt.name;
 ```
 
@@ -55,25 +73,54 @@ WHERE t.name = lt.name;
 
 ```sql
 ALTER TABLE trees
-ADD CONSTRAINT fk_tree_name
+ADD CONSTRAINT fk_tree_names
 FOREIGN KEY (name_id)
-REFERENCES tree_name(id);
+REFERENCES tree_names(id);
 ```
 
-* delete the name column in the main trees table
+* check that all the names in the trees table are present in the tree_names table
+
+The query should return 0 rows
+
+```sql
+select count(*)
+from trees t
+join tree_names tn on tn.id = t.name_id
+where t.name != tn.name;
+```
+
+* finally, delete the name column in the main trees table
 
 ```sql
 ALTER TABLE trees
 DROP COLUMN name;
 ```
 
+## Query the names 
+
+Now to get the name of a tree you need to JOIN the tables
+
+```sql
+select t.*, tn.* 
+from trees t 
+join tree_names tn on tn.id = t.name_id
+where t.id = 888;
+```
+
+We can insert new names (for instance for future trees) by adding a new row in the ```tree_names``` table. 
+or update a particular name without updating the trees table
+and even delete a tree with a unique name without deleting the name.
+
+
+
 --- 
+
 # Identify the logical entities
 
 Which logical entities are you going to extract and regroup in a dedicated table?
 
 - localisation
-- naming, species, genre, variety
+- naming, species, genre, variety ?
 - dimensions
 - what about idbase, remarkable, and anomaly ? can these stay in the trees table ?
 - does arrondissement need its own table ?
@@ -82,26 +129,27 @@ Which logical entities are you going to extract and regroup in a dedicated table
 Let's look at the columns and group them by logical entities
 
 
-### Ids
+## Ids
+
 We can keep the ids in the trees table:
 
 * id             
 * id_location   
-*  idbase        
+* idbase
 
-same with the flags:
+Same with the flags:
 
-* remarkable     : boolean
-*  anomaly        : boolean
+* remarkable: boolean
+* anomaly: boolean
 
-### addresses and locations
+## addresses and locations
 
-It makes sense to regroup all the columns associated with location of the tree.
+It makes sense to regroup all the columns associated with the localization of the tree.
 
-*  address        | character varying
+* address        | character varying
 * suppl_address  | character varying
-*  arrondissement | character varying
-*  geolocation    | point
+* arrondissement | character varying
+* geolocation    | point
 
 Note the weird format of the arrondissement and the lack of postal code 
 

@@ -41,6 +41,11 @@ data/treesdb_v04.sql.gz
 
 
 # other
+*.aux
+*.log
+*.out
+*.tex
+
 qr/*.png
 img/*.png
 
