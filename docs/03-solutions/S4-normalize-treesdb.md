@@ -1,14 +1,19 @@
 # Normalize treesdb
 
 ## Context
-In this document we are working with the treesdb_v02 database. 
-If you haven't done so already, connect to your local postgreSQL server and load the file 
+In this document we are working with the ```treesdb_v02``` database. 
+
+If you haven't done so already, connect to your local postgreSQL server and restore the file from the github repo
+
+[treesdb_v02.01.sql.backup](https://github.com/SkatAI/epitadb/blob/master/data/treesdb_v02.01.sql.backup)
 
 
 
-The goal of this exercise is to transform the flat one table ```treesdb``` database into a fully normalized database by applying 1NF, 2NF and 3NF forms.
+## Goal
 
-For each entity that you feel would benefit from having a dedicated table, the process is:
+The goal of this exercise is to transform the flat, one table, ```treesdb``` database into a fully normalized database by applying 1NF, 2NF and 3NF forms.
+
+For each entity that needs a dedicated table, the process is:
 
 1. create a new table with a primary key
 2. inserts values from the trees column 
@@ -16,43 +21,42 @@ For each entity that you feel would benefit from having a dedicated table, the p
 3. delete the original column 
 
 The entity can be composed of multiple original columns. 
-For instance, it makes sense to regroup  ```address``` and ```suppl_address``` in a ```location``` table.
+For instance, it makes sense to regroup  ```address```, ```arrondissement```, ```geolocation``` and ```suppl_address``` in a ```location``` table.
 
 
-# Example with ```name``` 
+## Example with ```name``` 
 
 The ```name``` column in the trees table is a categorical column. 
 
 * the most frequent tree name is **Platane** with 42841 occurences followed by 24945 marronniers
 and  22317 tilleuls. 
-* 28 names have correspond to one tree. Deletion anomaly
+* 28 names correspond to one tree. Deletion anomaly
 * 186 names occur more than once. Update anomaly
 * 1339 trees have a NULL value for ```name```
 
-A good candidate for normalization. 
+The column ```name``` is a good candidate for normalization. 
 
 
-* First create a new table called ```tree_names```. Very simple, only one column ```name```
+* First create a new table called ```tree_names```. Very simple, it has one primary and  only one column ```name```
 
 ```sql
 create table tree_names (
     id serial primary key,
     name varchar unique not null   
-)
+);
 ```
 
-Note the ```unique``` and ```not null``` constraints. Having null values in the ```tree_names``` table would defeat (one of) the purpose of normalization.
+Note the ```unique``` and ```not null``` constraints. Having null values in the ```tree_names``` table would defeat the purpose of normalization (at least some part of it).
 
 
 * Then inserts values from the trees column 
 
 ```sql
 INSERT INTO tree_names (name)
-SELECT DISTINCT name
-FROM trees
-WHERE name IS NOT NULL;
+SELECT DISTINCT t.name
+FROM trees t
+WHERE t.name IS NOT NULL;
 ```
-
 
 * create a foreign key in the trees table: ```name_id```
 
@@ -96,9 +100,39 @@ ALTER TABLE trees
 DROP COLUMN name;
 ```
 
+### variations
+Notice that the names in the new tree_names table follow no particular order. 
+
+To keep things really tidy, it would be great to have the name column be ordered alphabetically
+
+
+To do so we must modify the insert query:
+
+```sql
+INSERT INTO tree_names (name)
+SELECT DISTINCT name
+FROM trees
+WHERE name IS NOT NULL;
+```
+
+
+And use instead: 
+
+```sql
+INSERT INTO tree_names (name)
+SELECT DISTINCT name
+FROM trees t
+WHERE t.name IS NOT NULL
+ORDER BY t.name asc;
+```
+
+Exercice: Insert the names ordered by their frequency of occurences in the trees table so that most frequent names are at the top of the tree_names table.
+
+
+
 ## Query the names 
 
-Now to get the name of a tree you need to JOIN the tables
+Now to get the name of a tree we need to JOIN the tables trees and tree_names.
 
 ```sql
 select t.*, tn.* 
@@ -107,9 +141,12 @@ join tree_names tn on tn.id = t.name_id
 where t.id = 888;
 ```
 
-We can insert new names (for instance for future trees) by adding a new row in the ```tree_names``` table. 
-or update a particular name without updating the trees table
-and even delete a tree with a unique name without deleting the name.
+A bit more complex than a simple query. 
+however, 
+
+* we can insert new names (for instance for future trees) simply by adding a new row in the ```tree_names``` table. 
+* We can update a particular name without updating the trees table,
+* and even delete a tree with a unique name without making the name disappear.
 
 
 
@@ -133,25 +170,39 @@ Let's look at the columns and group them by logical entities
 
 We can keep the ids in the trees table:
 
-* id             
-* id_location   
-* idbase
+* ```id```
+* ```id_location```
+* ```idbase```
 
-Same with the flags:
+Same with the flags ```remarkable``` and ```anomaly```
 
-* remarkable: boolean
-* anomaly: boolean
 
-## addresses and locations
+## Domain & Stage 
+
+Let's start with the columns **domain & stage**.
+
+Both columns are categorical columns, show insertion, update and deletion anomalies an have null values. So they  should each be given their dedicated table:
+
+
+## Addresses and locations
 
 It makes sense to regroup all the columns associated with the localization of the tree.
 
-* address        | character varying
-* suppl_address  | character varying
-* arrondissement | character varying
-* geolocation    | point
+* address
+* suppl_address
+* arrondissement
+* geolocation
 
-Note the weird format of the arrondissement and the lack of postal code 
+Note the weird format of the ```arrondissement```, the lack of postal code etc ... These addresses are not standard. 
+
+### Reconciling keys
+
+One step in the normalization process consists in reconciling the keys by matching the value of the fields in the main and secondary tables.
+
+...
+
+
+### the BAN
 
 There is a national database of addresses called BAN (Base Nationale d'Adresse) available at [adresse.data.gouv.fr/base-adresse-nationale](https://adresse.data.gouv.fr/base-adresse-nationale)
 
@@ -182,60 +233,103 @@ returns
             "city":"Paris".....
 ```
 
-so you could sanitize the addresses by feeding the long, lat into the API, andd comapre it with the trees address and arrondissement and if there's a match you get a clean address properly formatted
+We could sanitize the addresses by feeding the long, lat into the API, and adding the properly formatted address to the location of the trees. But that's out of the scope of the exercise
 
 
-### domain & stage 
+## Taxonomy
 
-**domain & stage** should be given their dedicated table even if they don't change often:
+Taxonomy includes everythign related to the nature of the tree. In our case it englobes the columns : ```name```, ```genre```, ```species``` ```and variety```
 
-* domain         | character varying
-* stage          | character varying
 
-### taxonomy
-
-How do we deal with **taxonomy** which includes those four columns.
-
-Note that there's is an intrinsic relation between the name, genre, species and variety of a tree. Not sure which one. but it probably should be kept. 
-
- name           | character varying
- genre          | character varying
- species        | character varying
- variety        | character varying
+Note that there's is an intrinsic relation between the name, genre, species and variety of a tree. Not sure which one. but this hierarchy probably should be kept. 
 
 So, our options are: 
 
 - one table per column (2NF) (but we loses the relation between the different categories)
 
-or
+or 
 
 - one taxonomy table (keeps the relations between the different categories but will require having NULL values)
+- and one table per column 
+
+We will implement the second choice to conserve the relation between the trees name, genre etc ....
 
 
-###  measurements
+
+##  Measurements
 
 Should the tree measurements be kept in the trees table or should they have their own separate table ?
 
-* circumference  | integer
-*  height         | integer
-*  diameter       | double precision
+* circumference
+* height
+* diameter
 
 
 To answer consider these questions
 
-a. **Functional dependency**: Do these dimensions depend solely on the tree's ID, or could they change independently?
-b. **Update anomalies**: Would keeping them in the main table cause update anomalies?
-c. **Data redundancy**: Is there any repetition of this data across multiple trees?
-d. **Query patterns**: How frequently are these dimensions accessed along with other tree data?
+* **Functional dependency**: Do these dimensions depend solely on the tree's ID, or could they change independently?
+* **Update anomalies**: Would keeping them in the main table cause update anomalies?
+* **Data redundancy**: Is there any repetition of this data across multiple trees?
+* **Query patterns**: How frequently are these dimensions accessed along with other tree data?
 
-One piece of data is painfully missing from the trees table ... when the tree was last measured, the survey_date. 
+One piece of data is painfully missing from the trees table ... we don't know when each tree was last measured, there is no survey date. 
 
-If the survey date was available then we could have multiple measures for a given tree and the it would definitely make sense to put the measurements into a separated dedicated table  
+If a survey date was available then we could record multiple measures for a given tree. It would definitely make sense to give the measurements a separated dedicated table. 
 
-In  our context (no date column), there's still a feeling that measurement is a logical / natural object by itself. 
-So I would give them a dedicated table.
-
-However since there is no date of each measurements, each tree has one unique set of measures that are not going to change often (guessing). So we can keep them in the trees table.
+However since there is no date for each measurements, each tree has one unique set of measures that is not going to change often (or so we guess). So let's keep the measurements in the trees table to keep things simple.
 
 
+
+# Final structure
+
+The target structure is 
+
+
+| column       | table  |
+|--------------|--------|
+| id           | trees  |
+| id_location  | trees  |
+| idbase       | trees  |
+| remarkable   | trees  |
+| anomaly      | trees  |
+| height       | trees  |
+| circumference | trees  |
+| diameter       | trees  |
+
+
+
+| column         | table    |
+|----------------|----------|
+| address        | locations |
+| suppl_address  | locations |
+| arrondissement | locations |
+| geolocation    | locations |
+
+
+| column | table       |
+|--------|-------------|
+| domain | tree_domains |
+| stage  | tree_stages  |
+
+
+
+| column | table       |
+|--------|-------------|
+| name | tree_names |
+| genre  | tree_genres  |
+| species  | tree_species  |
+| variety  | tree_varieties  |
+
+We also create the ```taxonomy``` table to link the tree to its name, genre, species and variety
+
+![](./../../img/ERD_v03.png)
+
+
+### **Note**
+
+In the example given above we normalized the name column. 
+
+In the target schema, the tree_names table is linked to the taxonomy table not directly to the trees table.
+
+To avoid confusion you should restart from scratch and restore the treesdb_v02 database.
 
