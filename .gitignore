@@ -35,7 +35,7 @@ data/treesdb_v01.06.sql.backup
 data/treesdb_v01.07.sql
 
 data/treesdb_v02.sql.gz
-data/treesdb_v03.01.sql.backup
+# data/treesdb_v03.01.sql.backup
 data/treesdb_v03.sql.gz
 data/treesdb_v04.sql.gz
 
