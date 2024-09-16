@@ -2,7 +2,7 @@
 
 Goals of a good data structure design
 
-- **Data Integrity**: consistency, accuracy, avoiding anomalies
+- **Data Integrity** aka **Truth**: consistency, accuracy, avoiding anomalies
 - **Query performance**: fast data retrieval
 - Allow for future **expansion** of data types or relationships, evolution business requirements
 - **Scalability** : growth in data volume
@@ -28,7 +28,7 @@ and then:
     - normalization criteria: normal forms: 1NF, 2NF, 3NF
 - Denormalization when needed (OLAP)
 
-**Practice**: we normalize the trees v01 database
+**Practice**: we normalize the treesdb database
 
 
 ---
@@ -36,11 +36,18 @@ and then:
 # Entity Relation Diagrams
 
 
-Peter Chen developed the ER diagram in 1976.
+[Peter Chen](https://en.wikipedia.org/wiki/Peter_Chen#Work) developed the ER diagram in 1976.
+
+> Chen's main contributions are formalizing the concepts, developing a theory with a set of data definition and manipulation operations, and specifying the translation rules from the ER model to several major types of databases (including the Relational Database)
+
+### 1976
+That's what the Mac looked like in 1976 🤪🤪🤪
 
 ![](./../../img/1976-apple-1.jpg)
 
-The ER model was created to visualize data structures and relationships in many situations.
+
+
+The [ER model](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model) was created to visualize data structures and relationships in many situations.
 
 - Object-Oriented Systems
 - Software Architecture
@@ -87,7 +94,7 @@ The ER diagram displays the **relations** between the **entities** (tables) pres
 
 - connect to the remote server 
     - host:
-    - username:
+    - username: epita
     - password: 
 - click right on the **airdb** database name
 - click on **ERD for database**
@@ -102,7 +109,7 @@ You can change notation for the relation type with
 
 ---
 
-# OLAP vs OLTP
+# 2 main types of databases: OLAP vs OLTP
 
 The end usage of a database drives its data structure.
 
@@ -111,23 +118,31 @@ We consider two types of relational databases: **analytical** databases (OLAP) v
 ![](./../../img/olap-vs-oltp.png)
 
 
-**OLAP** : Online Analytical Processing
+## **OLAP** : Online Analytical Processing
+
 
 - analysis, BI, reporting, dashboards,
 - optimized for high **read** volume
 - complex queries (lots of joins and calculations) 
-- can be asynchronous, query execution does not have to be lightning fast
+- can be **asynchronous**, query execution does not have to be lightning fast
+
+**OLAP does not have to be super fast**
 
 
-**OLTP**: Online Transaction Processing,
+## **OLTP**: Online Transaction Processing,
+
 
 - applications, transactions, high **write** volume
 - optimized for high write volume: **data integrity**, fast updates and inserts
 - ACID properties for transactions (all or nothing) (ACID: (Atomicity, Consistency, Isolation, Durability))
-- synchronous, real time, speed is super important
+- **synchronous**, real time, speed is super important
+
+**OLTP has to be super fast**
 
 
-Further reading : [difference between olap and oltp in dbms](https://www.geeksforgeeks.org/difference-between-olap-and-oltp-in-dbms/). Look at the table of differences and the Q&A at the end of the article.
+Further reading : [difference between olap and oltp in dbms](https://www.geeksforgeeks.org/difference-between-olap-and-oltp-in-dbms/). 
+
+Look at the table of differences and the Q&A at the end of the article.
 
 
 ## Quiz
@@ -136,7 +151,7 @@ For each scenario, determine whether it's more suited for an OLTP (Online Transa
 
 
 - Liking a friend's post on Instagram.
-- Analyzing trending hashtags on Twitter over the past month.
+- Analyzing trending hashtags on Mastodon over the past month.
 - Sending a Snapchat message to a friend.
 - Netflix recommending shows based on your viewing history.
 - Ordering food through a delivery app.
@@ -168,21 +183,20 @@ Consider the 2 database designs:
 * **1 account table and 1 dedicated phone table**
 ![](./../../img/design-2-tables.png)
 
-which design (1 or 2 tables) is betterin terms of faster or simpler query for:
+which design (1 or 2 tables) is better in terms of faster or simpler query for:
 
-- fast retrieval search over phone number(s)
-- dealing with missing phone type
-- adding a new phone type
-- flagging a phone as primary
+- dealing with missing phone type (no work phone)
+- adding a new phone type (new secret phone)
+- flagging a phone as primary 
 - handling a user with no phone
 - displaying all the phones of an account in a UX
+- fast retrieval search over phone number(s)
 
 ---
 
 # Normalization
 
-The general goal of **normalization** is to reduce data **redundancy** and **dependency**
-by organizing data into **separate, related tables**.
+The general goal of **normalization** is to reduce data **redundancy** and **dependency** by organizing data into **separate, related tables**.
 
 This helps maintain data integrity and flexibility:
 
@@ -195,10 +209,9 @@ Normalized databases are
 - easy to update
 - easy to maintain
 
-Informally, a database is normalized if:
- 
-1. all column values depend only on the table primary key,  
-2. data is decomposed into multiple tables to avoid repetition.
+More formally, a database is normalized if: 
+
+> **all column values depend only on the table primary key,**  
 
 In the _1 table design_ for the account and its phone numbers, a phone number value depends on the name of the phone column (home_phone, work_phone, ...) not just the account_id key: We can say it's not normalized
 
@@ -212,7 +225,9 @@ The idea of denormalization is to have data **redundancy** to simplify queries a
 
 **Redundant data** : the same data / info exists in multiple tables
 
-SELECT queries involve fewer JOINs. However INSERT, UPDATE, DELETE queries are more complex as multiple tables must be accounted for. Therefore data integrity is more complex to preserve.
+SELECT queries involve fewer JOINs. 
+
+However INSERT, UPDATE, DELETE queries are more complex as multiple tables must be accounted for. Therefore data integrity is more complex to preserve.
 
 
 ## Scenario:
@@ -220,28 +235,62 @@ SELECT queries involve fewer JOINs. However INSERT, UPDATE, DELETE queries are m
 In a social network, imagine that you have two tables:
 
 1. The **Users table**: Contains user information like `user_id` `name` and `email`.
+
+| user_id | user_name | email        |
+|---------|-----------|----------------|
+| 101     | Ulaf     | ....@gmail.com | 
+| 102     | Birgitte | ....@gmail.com |
+| 103     | Inge     | ....@gmail.com |
+| 114     | Boris     | ....@gmail.com |
+
 2. The **Posts table**: Contains posts made by users, with fields like `post_id` `content`, `publication_date` ... and the post's author information through the `user_id`.
 
-In a **normalized** database: users and their posts are only linked by the ```user_id``` which is a foreign key in the posts table. The users table has no information about posts.
+
+| post_id | user_id  | content        | pub_date |
+|---------|---------|----------------|------|
+| 1       | 101     | I ❤️ postgreSQL   | 2022-10-01 | 
+| 2       | 103     | Singing in the rain | 2022-10-02 |
+| 3       | 102     | Nerds unite! | 2022-10-02 |
+| 4       | 114     | Guys? i'm bored 😒 when's the break?    | 2022-10-02 |
+| 5       | 103     | Taylor swift omg! #sweet | 2022-10-03 |
+
+
+In a **normalized** database: users and their posts are only linked by the ```user_id``` which is a foreign key in the posts table. 
+
+The users table has no information about posts.
 And similarly the posts table is all about the posts and not their author (besides the user_id foreign key).
 
 
 So when you need to display the user's name next to their post, you need to **JOIN** `Users` and `Posts` tables.
 
+```sql
+SELECT p.*, u.name 
+FROM POSTS p 
+JOIN users u on p.user_id = u.id
+WHERE p.pub_date = '2022-10-02';
+```
 
 In order to improve performance, you can **denormalize** the posts table by adding the `user_name` to the `Posts` table.
 
 A Denormalized `Posts` table would then look like:
 
-| post_id | user_id | user_name | content        |
-|---------|---------|-----------|----------------|
-| 1       | 101     | Ulaf     | Hello world!   |
-| 2       | 102     | Birgitte | Loving the sun |
-| 3       | 103     | Inge     | Great day!     |
-| 4       | 114     | Boris     | When's the break?    |
+| post_id | user_id | user_name | content        | pub_date |
+|---------|---------|-----------|----------------|------|
+| 1       | 101     | Ulaf     | I ❤️ postgreSQL   | 2022-10-01 | 
+| 2       | 103     | Inge | Singing in the rain | 2022-10-02 |
+| 3       | 102     | Birgitte     | Nerds unite! | 2022-10-02 |
+| 4       | 114     | Boris     | Guys? i'm bored 😒 when's the break?    | 2022-10-02 |
+| 5       | 103     | Inge | Taylor swift omg! #sweet | 2022-10-03 |
 
 
-**Faster read performance** since You can fetch the `user_name` along with the post data without needing to perform a join between the `Users` and `Posts` tables.
+```sql
+SELECT p.* 
+FROM POSTS p 
+WHERE p.pub_date = '2022-10-02';
+```
+
+
+**Faster read performance** since you can fetch the `user_name` along with the post data without needing to perform a join between the `Users` and `Posts` tables.
 
 But
 
@@ -260,7 +309,7 @@ There are 3 types of *anomalies* that you can look for:
 - update
 - deletion
 
-normalization would solve these anomalies.
+A normalized database will solve these anomalies.
 
 ## Insertion anomalies
 
@@ -423,7 +472,7 @@ We can always choose to apply a normalization form or to ignore it
 
 In the following, we mention:
 
-* Relation : table
+* Relation, or an entity: table
 * Attribute : column
 * Primary key
 * Composite key : key composed of multiple attributes
@@ -461,7 +510,9 @@ The rule of thumb is :
 
 > When you frequently need to access, modify, handle the elements of the sets of values for a given record then  apply 1NF
 
-In the end it's a balance between simplicity and control.
+For instance a collaborative blog post where we start with 1 author (varchar), then a co-author comes along (array), then a third and a fourth. Then the 1st one give up and does not want to be in the list of authors etc etc etc. In that case using an Array to store the list of authors causes more trouble than it solves. and authors should have their own table. 
+
+In the end it's a balance between simplicity and ease of control.
 
 For instance:
 
@@ -494,7 +545,7 @@ Some cases of non-compliance with 2NF
     * Relation: ```Order(OrderID, ProductID, ProductName, ProductCategory)```
     * ```ProductCategory``` and ```ProductName``` both depend on ```ProductID```, not the full ```OrderID```.
 
-* Inverted one to many
+* general case: Inverted one to many
     * A has many Bs
     * Relation: ```B(Bid, B.attribute, A.attribute)```
 
@@ -512,13 +563,13 @@ see :
 
 ## 2NF violation in the trees table ?
 
-The tree table has many 2NF violations, since all the categorical columns are into a one to many (category has many trees) relation.
+The tree table has many 2NF violations, since all the categorical columns are into a one to many (category (A) has many trees (B)) relation.
 
 2NF normalization tells us we should create a table for all the categorical columns.
 
-But that feels overkill and instead of simplifying the logical structure of the data it complexifies it without clear gain. (but we will still do it)
+But that may feel overkill and instead of simplifying the logical structure of the data it might add too much complexity it without clear gain. (but we will still do it anyway)
 
-Keeping the categories in the tree table is a form of denormalization.
+On the contrary, keeping the categories in the tree table is a form of denormalization.
 
 ## When to apply 2NF to a categorical attribute ?
 
@@ -539,20 +590,20 @@ In practice the design of the database can evolve:
 
 # 3NF
 
-A table R is in 3NF if and only if both of the following conditions hold:
+A relation R is in 3NF if and only if both of the following conditions hold:
 
-* The table is in second normal form (2NF).
+* The relation is in second normal form (2NF).
 * No non-prime attribute of R is transitively dependent on the primary key.
 
-A transitive dependency occurs when a non-prime attribute (an attribute that is not part of any key) depends on another non-prime attribute, rather than depending directly on the primary key.
+> A **transitive dependency** occurs when a non-prime attribute (an attribute that is not part of any key) depends on another non-prime attribute, rather than depending directly on the primary key.
 
 where:
 
 * non-prime attribute: an attribute that is not part of any key
 
-It's becoming a bit abstract :)
+It's becoming a bit abstract 🥱😴
 
-For the statisticians in the room, it's a bit like confonders
+For the statisticians in the room, it's a bit like **confonders**.
 
 So basically, in a table you would have 2 columns that are not keys that sort of depends on each other. 
 
@@ -595,6 +646,9 @@ The key differences:
 
 # Denormalize
 
+Denormalization means to choose not to follow a normal form to simplify things.
+
+
 So, when can we denormalize instead?
 
 
@@ -610,7 +664,6 @@ Dimitri Fontaine - The Art of PostgreSQL (2022)
 
 In short: **Keep it simple**
 
-Denormalization means to choose not to follow a normal form to simplify things.
 
 ---
 
@@ -619,6 +672,16 @@ Denormalization means to choose not to follow a normal form to simplify things.
 PostgreSQL offers several data types that can store multiple values in a single column, which breaks the First Normal Form (1NF).
 
 These types are often used for performance optimization, improved query efficiency, or when the data naturally fits a more complex structure.
+
+
+There are many data types in postgreSQL
+
+see for instance the long list of availabe data types when adding a column in pgAdmin
+
+![](./../../img/pgAdmin-add-column-data-types.png)
+
+and the [documentation on data types](https://www.postgresql.org/docs/current/datatype.html)
+
 
 
 ### Array Types:
@@ -662,16 +725,6 @@ When to use:
 * When you have a logical grouping of fields that are always used together.
 * For improving query performance by reducing joins.
 * When you want to enforce a structure on a group of related fields.
-
-# Many available data types in PostgresQL
-
-There are many data types in postgreSQL
-
-see for instance the long list of availabe data types when adding a column in pgAdmin
-
-![](./../../img/pgAdmin-add-column-data-types.png)
-
-and the [documentation on data types](https://www.postgresql.org/docs/current/datatype.html)
 
 
 # Next
