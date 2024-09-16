@@ -76,10 +76,11 @@ To check if the server is running on your local machine
 
 ### On mac
 In a terminal window:
+
 * brew services start | stop | restart postgres@16
 * brew services info postgres@16
 
-sometimes you have to use ```sudo``` to start. 
+Sometimes you have to use ```sudo``` to start. 
 
 # Let's go
 
