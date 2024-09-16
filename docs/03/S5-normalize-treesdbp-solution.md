@@ -1,11 +1,13 @@
-# treesdb normalization - The solution
+# Normalization - The solution
+
+
 
 
 ## Start
 
 1. Restore the ```treesdb_v02.01.sql.backup``` file into a newly created and empty ```treesdb_v03``` database.
-2. connect to the ```treesdb_v03``` database on local either
-    *  via psql: ```psql treesdb_v03```
+2. connect to the ```treesdb_v03``` database on local either via
+    * via psql: ```psql -U postgres -d treesdb_v03``` (Win) or ```psql -d treesdb_v03 ``` (Mac)
     * or in pgAdmin
 
 
@@ -67,9 +69,6 @@ CREATE TABLE taxonomy (
 | suppl_address  | location |
 | arrondissement | location |
 | geolocation    | location |
-
-
-
 
 
 
