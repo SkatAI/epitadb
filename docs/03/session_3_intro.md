@@ -4,7 +4,7 @@
 
 * dumping and restoring database (Wow, such restore, much excite)
 
-![](https://imgflip.com/i/93mksr)
+![](./../../img/doge-restore-excite.png)
 
 
 * Transformed the basic ```trees``` table, directly loaded from the csv file
@@ -77,14 +77,14 @@ To check if the server is running on your local machine
 ### On mac
 In a terminal window:
 
-* brew services start | stop | restart postgres@16
-* brew services info postgres@16
+* ```brew services start | stop | restart postgres@16```
+* ```brew services info postgres@16```
 
 Sometimes you have to use ```sudo``` to start. 
 
 # Let's go
 
-get the course pdf from the githu repo in 
+get the course pdf from the github repo in 
 
-epitadb\docs\03\S3-database-design-normalization.pdf
+* [github > SkatAI > epitadb > docs > 03 > S3-database-design-normalization.pdf](https://github.com/SkatAI/epitadb/blob/master/docs/03/S3-database-design-normalization.pdf)
 

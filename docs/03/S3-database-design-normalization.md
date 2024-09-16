@@ -406,6 +406,8 @@ Why is it a problem to have NULL values in a column?
 
 So avoid NULL values if you can!
 
+![](./../../img/null-values-headache.png)
+
 ---
 
 # What about anomalies in the trees table ?
@@ -496,6 +498,7 @@ In short: columns cannot  composite values : arrays, json, ...
 
 
 More on 1NF:
+
 * [Wikipedia: Satisfying 1NF](https://en.wikipedia.org/wiki/Database_normalization#Satisfying_1NF)
 
 
@@ -730,6 +733,8 @@ When to use:
 # Next
 
 Let's apply normalization on the trees database.
+
+* [github > SkatAI > epitadb > docs > 03 > S4-normalize-treesdb.pdf](https://github.com/SkatAI/epitadb/blob/master/docs/03/S4-normalize-treesdb.pdf)
 
 
 
