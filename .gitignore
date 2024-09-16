@@ -47,7 +47,7 @@ data/treesdb_v04.sql.gz
 *.tex
 
 qr/*.png
-img/*.png
+
 
 videos/
 docs/02-solutions
