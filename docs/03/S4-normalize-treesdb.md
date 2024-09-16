@@ -5,8 +5,62 @@ In this document we are working with the ```treesdb_v02``` database.
 
 If you haven't done so already, connect to your local postgreSQL server and restore the file from the github repo
 
-[treesdb_v02.01.sql.backup](https://github.com/SkatAI/epitadb/blob/master/data/treesdb_v02.01.sql.backup)
+[github > SkatAI > epitadb > data > treesdb_v02.01.sql.backup](https://github.com/SkatAI/epitadb/blob/master/data/treesdb_v02.01.sql.backup)
 
+In the terminal (mac or powershell ), on local 
+
+psql with (Mac): 
+
+```bash
+psql -U <localusername> -d postgres
+```
+or (Windows): 
+
+```powershell
+psql -U postgres -d postgres
+```
+
+
+create the database ```treesdb_v03``` , (1st delete it if it exists):
+
+```sql
+DROP database if exists treesdb_v03 WITH(force) ;
+
+CREATE DATABASE treesdb_v03
+    WITH
+    OWNER = <postgres (win) or your_local_username (mac)>
+    ENCODING = 'UTF8'
+    LOCALE_PROVIDER = 'libc'
+    CONNECTION LIMIT = -1
+    IS_TEMPLATE = False;
+```
+
+Then back in the terminal (exit psql with ```\q```)
+
+```bash
+pg_restore -d treesdb_v03 \
+-U postgres \
+--no-owner \
+--no-privileges \
+--no-data-for-failed-tables \
+--section=pre-data \
+--section=data \
+--section=post-data \
+--verbose \
+--exit-on-error  \
+--single-transaction \
+<path to your file>/treesdb_v02.01.sql.backup
+```
+
+### Nice
+
+You can test that the data was uploaded from the command line in the terminal by using psql to connect execute a query at the same time :
+
+```bash
+psql  -U postgres -d treesdb_v03 -c "select * from trees order by random() limit 1;"
+```
+
+This should retturn the number of tree records in the trees table.
 
 
 ## Goal
@@ -30,14 +84,14 @@ The ```name``` column in the trees table is a categorical column.
 
 * the most frequent tree name is **Platane** with 42841 occurences followed by 24945 marronniers
 and  22317 tilleuls. 
+* for a total of 214 different names.
 * 28 names correspond to one tree. Deletion anomaly
 * 186 names occur more than once. Update anomaly
-* 1339 trees have a NULL value for ```name```
+* 1339 trees have a NULL value for ```name```)
 
 The column ```name``` is a good candidate for normalization. 
 
-
-* First create a new table called ```tree_names```. Very simple, it has one primary and  only one column ```name```
+* First create a new table called ```tree_names```. Very simple, it has one primary key and only one column ```name```
 
 ```sql
 create table tree_names (
@@ -46,7 +100,9 @@ create table tree_names (
 );
 ```
 
-Note the ```unique``` and ```not null``` constraints. Having null values in the ```tree_names``` table would defeat the purpose of normalization (at least some part of it).
+Note the ```unique``` and ```not null``` constraints. 
+
+Having null values in the ```tree_names``` table would defeat the purpose of normalization.
 
 
 * Then inserts values from the trees column 
@@ -141,11 +197,11 @@ join tree_names tn on tn.id = t.name_id
 where t.id = 888;
 ```
 
-A bit more complex than a simple query. 
-however, 
+Though a little bit more complex than a simple query, we now can 
 
-* we can insert new names (for instance for future trees) simply by adding a new row in the ```tree_names``` table. 
-* We can update a particular name without updating the trees table,
+
+* insert new names (for instance for future trees) simply by adding a new row in the ```tree_names``` table, 
+* update a particular name without updating the trees table,
 * and even delete a tree with a unique name without making the name disappear.
 
 
@@ -154,13 +210,14 @@ however,
 
 # Identify the logical entities
 
-Which logical entities are you going to extract and regroup in a dedicated table?
+Which logical entities do we need to extract and regroup in a dedicated table?
 
-- localisation
+- localisation 
 - naming, species, genre, variety ?
 - dimensions
 - what about idbase, remarkable, and anomaly ? can these stay in the trees table ?
 - does arrondissement need its own table ?
+
 
 
 Let's look at the columns and group them by logical entities
