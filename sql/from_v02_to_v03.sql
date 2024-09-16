@@ -16,7 +16,7 @@ DROP database if exists treesdb_v03 WITH(force) ;
 
 CREATE DATABASE treesdb_v03
     WITH
-    OWNER = epita
+    OWNER = postgres
     ENCODING = 'UTF8'
     LOCALE_PROVIDER = 'libc'
     CONNECTION LIMIT = -1

@@ -1,16 +1,16 @@
 -- script to load the data from the csv file les_arbres_upload_v02.csv
--- file is UTF8, proper comma delimiter and line returns, proper headers
+-- the csv file is UTF8, proper comma delimiter and line returns, proper headers
 
 -- set the host IP address when accessing the remote postgresql server
 
 export PGHOST=$(gcloud compute instances describe epitadb-permanent --zone us-central1-c --format="get(networkInterfaces[0].accessConfigs[0].natIP)")
 echo $PGHOST
 
-
 -- create database
+-- change the OWNER to your local username if you have one (check with \du)
 CREATE DATABASE treesdb_v01
     WITH
-    OWNER = alexis
+    OWNER = postgres
     ENCODING = 'UTF8'
     LOCALE_PROVIDER = 'libc'
     CONNECTION LIMIT = -1
@@ -124,5 +124,36 @@ pg_restore -h $PGHOST \
 psql -h $PGHOST -U epita -d treesdb_v01 -c "select count(*) from trees;"
 psql -h $PGHOST -U epita -d treesdb_v01 -c "select * from trees order by random() limit 1;"
 
+-- and on local with user postgres 
+pg_restore  \
+-d "treesdb_v01" \
+-U postgres \
+--no-owner \
+--no-privileges \
+--no-data-for-failed-tables \
+--section=pre-data \
+--section=data \
+--section=post-data \
+--verbose \
+--exit-on-error  \
+--single-transaction \
+"/Users/alexis/work/epitadb/data/treesdb_v01.08.sql.backup"
 
 
+-- and in powershell Admin
+pg_restore -d "treesdb_v01" `
+  -U postgres `
+  --no-owner `
+  --no-privileges `
+  --no-data-for-failed-tables `
+  --section=pre-data `
+  --section=data `
+  --section=post-data `
+  --verbose `
+  --exit-on-error `
+  --single-transaction `
+  "C:\Users\alexis\work\epitadb\data\treesdb_v01.08.sql.backup"
+
+
+
+  "C:\path\to\your\treesdb_v01.08.sql.backup"
