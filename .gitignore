@@ -2,7 +2,7 @@
 .ipynb_checkpoints/
 
 # Ignored File Types
-
+.~lock.*#
 *.xlsx
 *.pkl
 *.json
