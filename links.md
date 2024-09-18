@@ -22,3 +22,10 @@ https://www.crunchydata.com/postgres-tips
 
 - data types:
 https://www.postgresql.org/docs/current/datatype.html
+
+
+# worksheets
+
+normalization
+
+https://docs.google.com/forms/d/1Qgw0WUVk8UkaUVWnK3agEu-qYBgf5iU6BxIJfeeZzts/edit
