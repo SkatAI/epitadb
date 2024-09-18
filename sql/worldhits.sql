@@ -1,18 +1,23 @@
 ""
 dataset from https://www.kaggle.com/datasets/thebumpkin/300-world-music-tracks-with-spotify-data
-
-
 ""
-CREATE DATABASE worldhits
+
+-- psql into your local server
+--
+
+-- create a new database,
+CREATE DATABASE worldhitsdb
     WITH
-    OWNER = alexis
+    OWNER = postgres
     ENCODING = 'UTF8'
     LOCALE_PROVIDER = 'libc'
     CONNECTION LIMIT = -1
     IS_TEMPLATE = False;
 
+-- connect to worldhits
 \c worldhits
--- create the table
+
+-- create the main table
 CREATE TABLE tracks (
     Track VARCHAR(255),
     Artist VARCHAR(255),
@@ -34,6 +39,11 @@ CREATE TABLE tracks (
     Popularity INT
 );
 
-
+-- copy the data into the table
+-- change the path to WorldHits.csv
 \COPY tracks FROM '/Users/alexis/work/epitadb/data/WorldHits.csv' WITH CSV HEADER DELIMITER ',';
 
+-- run the query
+select count(*) from tacks;
+
+-- should return N rows
