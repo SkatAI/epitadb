@@ -48,6 +48,7 @@ data/treesdb_v04.sql.gz
 
 qr/*.png
 
+latex/
 
 videos/
 docs/02-solutions
