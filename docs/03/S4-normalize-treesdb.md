@@ -1,20 +1,20 @@
 # Normalize treesdb
 
 ## Context
-In this document we are working with the ```treesdb_v02``` database. 
+In this document we are working with the ```treesdb_v02``` database.
 
 If you haven't done so already, connect to your local postgreSQL server and restore the file from the github repo
 
 [github > SkatAI > epitadb > data > treesdb_v02.01.sql.backup](https://github.com/SkatAI/epitadb/blob/master/data/treesdb_v02.01.sql.backup)
 
-In the terminal (mac or powershell ), on local 
+In the terminal (mac or powershell ), on local
 
-psql with (Mac): 
+psql with (Mac):
 
 ```bash
 psql -U <localusername> -d postgres
 ```
-or (Windows): 
+or (Windows):
 
 ```powershell
 psql -U postgres -d postgres
@@ -70,42 +70,42 @@ The goal of this exercise is to transform the flat, one table, ```treesdb``` dat
 For each entity that needs a dedicated table, the process is:
 
 1. create a new table with a primary key
-2. inserts values from the trees column 
+2. inserts values from the trees column
 3. add a foreign key to the trees table
-3. delete the original column 
+3. delete the original column
 
-The entity can be composed of multiple original columns. 
+The entity can be composed of multiple original columns.
 For instance, it makes sense to regroup  ```address```, ```arrondissement```, ```geolocation``` and ```suppl_address``` in a ```location``` table.
 
 
-## Example with ```name``` 
+## Example with ```name```
 
-The ```name``` column in the trees table is a categorical column. 
+The ```name``` column in the trees table is a categorical column.
 
 * the most frequent tree name is **Platane** with 42841 occurences followed by 24945 marronniers
-and  22317 tilleuls. 
+and  22317 tilleuls.
 * for a total of 214 different names.
 * 28 names correspond to one tree. Deletion anomaly
 * 186 names occur more than once. Update anomaly
 * 1339 trees have a NULL value for ```name```)
 
-The column ```name``` is a good candidate for normalization. 
+The column ```name``` is a good candidate for normalization.
 
 * First create a new table called ```tree_names```. Very simple, it has one primary key and only one column ```name```
 
 ```sql
 create table tree_names (
     id serial primary key,
-    name varchar unique not null   
+    name varchar unique not null
 );
 ```
 
-Note the ```unique``` and ```not null``` constraints. 
+Note the ```unique``` and ```not null``` constraints.
 
 Having null values in the ```tree_names``` table would defeat the purpose of normalization.
 
 
-* Then inserts values from the trees column 
+* Then inserts values from the trees column
 
 ```sql
 INSERT INTO tree_names (name)
@@ -126,10 +126,10 @@ ALTER TABLE trees ADD COLUMN name_id INTEGER;
 UPDATE trees t
 SET name_id = tn.id
 FROM tree_names tn
-WHERE t.name = lt.name;
+WHERE t.name = tn.name;
 ```
 
-* add the foreign key constraint 
+* add the foreign key constraint
 
 ```sql
 ALTER TABLE trees
@@ -157,7 +157,7 @@ DROP COLUMN name;
 ```
 
 ### variations
-Notice that the names in the new tree_names table follow no particular order. 
+Notice that the names in the new tree_names table follow no particular order.
 
 To keep things really tidy, it would be great to have the name column be ordered alphabetically
 
@@ -172,7 +172,7 @@ WHERE name IS NOT NULL;
 ```
 
 
-And use instead: 
+And use instead:
 
 ```sql
 INSERT INTO tree_names (name)
@@ -186,33 +186,33 @@ Exercice: Insert the names ordered by their frequency of occurences in the trees
 
 
 
-## Query the names 
+## Query the names
 
 Now to get the name of a tree we need to JOIN the tables trees and tree_names.
 
 ```sql
-select t.*, tn.* 
-from trees t 
+select t.*, tn.*
+from trees t
 join tree_names tn on tn.id = t.name_id
 where t.id = 888;
 ```
 
-Though a little bit more complex than a simple query, we now can 
+Though a little bit more complex than a simple query, we now can
 
 
-* insert new names (for instance for future trees) simply by adding a new row in the ```tree_names``` table, 
+* insert new names (for instance for future trees) simply by adding a new row in the ```tree_names``` table,
 * update a particular name without updating the trees table,
 * and even delete a tree with a unique name without making the name disappear.
 
 
 
---- 
+---
 
 # Identify the logical entities
 
 Which logical entities do we need to extract and regroup in a dedicated table?
 
-- localisation 
+- localisation
 - naming, species, genre, variety ?
 - dimensions
 - what about idbase, remarkable, and anomaly ? can these stay in the trees table ?
@@ -234,7 +234,7 @@ We can keep the ids in the trees table:
 Same with the flags ```remarkable``` and ```anomaly```
 
 
-## Domain & Stage 
+## Domain & Stage
 
 Let's start with the columns **domain & stage**.
 
@@ -250,14 +250,14 @@ It makes sense to regroup all the columns associated with the localization of th
 * arrondissement
 * geolocation
 
-Note the weird format of the ```arrondissement```, the lack of postal code etc ... These addresses are not standard. 
+Note the weird format of the ```arrondissement```, the lack of postal code etc ... These addresses are not standard.
 
 ### Reconciling keys
 
 One step in the normalization process consists in reconciling the keys by matching the value of the fields in the main and secondary tables.
 For the locations table we could assume that each trees has a unique geolocation. And we would be wrong!
 
-There are 12 geolocation duplicates in the trees table. 
+There are 12 geolocation duplicates in the trees table.
 
 ```sql
 SELECT COUNT(*) as tree_count, geolocation::text
@@ -269,7 +269,7 @@ ORDER BY tree_count DESC;
 
 A quick check will show that geolocation duplicates all have the same address. So we can delete these duplicates and fall back to reconciling the keys based on the geolocation points.
 
-The sql to delete the geolocation duplicates is more complex. 
+The sql to delete the geolocation duplicates is more complex.
 
 ```sql
 WITH numbered_duplicates AS (
@@ -291,9 +291,9 @@ WHERE id IN (
 );
 ```
 
-Note: Another way to avoid duplicates is to cast geolocation as text and use 
-```insert from select distinct``` in the insert query and then to recast geolocation as point. 
-That may be simpler. 
+Note: Another way to avoid duplicates is to cast geolocation as text and use
+```insert from select distinct``` in the insert query and then to recast geolocation as point.
+That may be simpler.
 
 
 
@@ -336,16 +336,16 @@ We could sanitize the addresses by feeding the long, lat into the API, and addin
 Taxonomy includes everythign related to the nature of the tree. In our case it englobes the columns : ```name```, ```genre```, ```species``` ```and variety```
 
 
-Note that there's is an intrinsic relation between the name, genre, species and variety of a tree. Not sure which one. but this hierarchy probably should be kept. 
+Note that there's is an intrinsic relation between the name, genre, species and variety of a tree. Not sure which one. but this hierarchy probably should be kept.
 
-So, our options are: 
+So, our options are:
 
 - one table per column (2NF) (but we loses the relation between the different categories)
 
-or 
+or
 
 - one taxonomy table (keeps the relations between the different categories but will require having NULL values)
-- and one table per column 
+- and one table per column
 
 We will implement the second choice to conserve the relation between the trees name, genre etc ....
 
@@ -367,9 +367,9 @@ To answer consider these questions
 * **Data redundancy**: Is there any repetition of this data across multiple trees?
 * **Query patterns**: How frequently are these dimensions accessed along with other tree data?
 
-One piece of data is painfully missing from the trees table ... we don't know when each tree was last measured, there is no survey date. 
+One piece of data is painfully missing from the trees table ... we don't know when each tree was last measured, there is no survey date.
 
-If a survey date was available then we could record multiple measures for a given tree. It would definitely make sense to give the measurements a separated dedicated table. 
+If a survey date was available then we could record multiple measures for a given tree. It would definitely make sense to give the measurements a separated dedicated table.
 
 However since there is no date for each measurements, each tree has one unique set of measures that is not going to change often (or so we guess). So let's keep the measurements in the trees table to keep things simple.
 
@@ -377,7 +377,7 @@ However since there is no date for each measurements, each tree has one unique s
 
 # Final structure
 
-The target structure is 
+The target structure is
 
 
 | column       | table  |
@@ -422,7 +422,7 @@ We also create the ```taxonomy``` table to link the tree to its name, genre, spe
 
 ### **Note**
 
-In the example given above we normalized the name column. 
+In the example given above we normalized the name column.
 
 In the target schema, the tree_names table is linked to the taxonomy table not directly to the trees table.
 
