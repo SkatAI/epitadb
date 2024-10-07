@@ -22,9 +22,8 @@
 | 06.03 | new `energydb`  | ✅ |
 | 06.04 | indexes  | ✅ |
 | 06.05 | quiz on algorithms  | ✅ |
-| 06.06 | indexes lab on `energydb` | - |
+| 06.06 | indexes lab on `energydb` | ✅  |
 |-------|-----------------------|----------|
-| 08 | projet | - |
 
 Quiz on algorithms
 <https://forms.gle/5fdjpUSr8YaqA9KNA>
