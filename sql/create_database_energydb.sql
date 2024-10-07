@@ -117,36 +117,45 @@ CREATE TABLE energy_production_daily (
 );
 
 -- Function to generate daily energy production data
-CREATE OR REPLACE FUNCTION generate_daily_production(num_days INTEGER)
-RETURNS VOID AS $$
+CREATE OR REPLACE FUNCTION public.generate_daily_production(num_days integer)
+ RETURNS void
+ LANGUAGE plpgsql
+AS $function$
 DECLARE
-    i INTEGER;
-    v_production_entity_id INTEGER;
-    v_date DATE;
-    v_energy_produced_mwh NUMERIC(10, 2);
+    v_batch_size INTEGER := 2000; -- Adjust this value based on your system's memory
+    v_batches INTEGER := CEIL(num_days::float / v_batch_size);
+    v_entity_ids INTEGER[];
+    v_entity_capacities NUMERIC[];
+    v_max_id INTEGER;
+    v_min_id INTEGER;
 BEGIN
-    FOR i IN 1..num_days LOOP
-        -- Select a random production entity
-        SELECT id INTO v_production_entity_id
+    -- Get the range of production entity IDs
+    SELECT MIN(id), MAX(id) INTO v_min_id, v_max_id FROM production_entities;
+
+    -- Precompute random entity IDs and their capacities
+    WITH random_entities AS (
+        SELECT id, capacity_mw
         FROM production_entities
-        ORDER BY RANDOM()
-        LIMIT 1;
+        WHERE id IN (
+            SELECT (random() * (v_max_id - v_min_id) + v_min_id)::integer
+            FROM generate_series(1, LEAST(num_days, v_max_id - v_min_id))
+        )
+    )
+    SELECT array_agg(id), array_agg(capacity_mw)
+    INTO v_entity_ids, v_entity_capacities
+    FROM random_entities;
 
-        -- Generate a random date within the last year
-        v_date := CURRENT_DATE - (random() * 365)::INTEGER;
-
-        -- Generate random energy production (between 0 and the entity's capacity)
-        SELECT random() * capacity_mw * 24 INTO v_energy_produced_mwh
-        FROM production_entities
-        WHERE id = v_production_entity_id;
-
-        -- Insert the generated data
+    -- Generate and insert data in batches
+    FOR i IN 1..v_batches LOOP
         INSERT INTO energy_production_daily (production_entity_id, date, energy_produced_mwh)
-        VALUES (v_production_entity_id, v_date, v_energy_produced_mwh);
+        SELECT
+            v_entity_ids[1 + ((gs.id - 1) % array_length(v_entity_ids, 1))],
+            CURRENT_DATE - (random() * 365)::INTEGER,
+            random() * v_entity_capacities[1 + ((gs.id - 1) % array_length(v_entity_capacities, 1))] * 24
+        FROM generate_series(1, LEAST(v_batch_size, num_days - (i-1)*v_batch_size)) gs(id);
     END LOOP;
 END;
-$$ LANGUAGE plpgsql;
-
+$function$;
 
 
 -- Generate 1 million rows
