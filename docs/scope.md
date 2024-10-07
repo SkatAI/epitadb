@@ -19,9 +19,9 @@
 |-------|-----------------------|----------|
 | 06.01 | Intro Indexes  | ✅ |
 | 06.02 | Prelude - Bitmap  | ✅ |
-| 06.03 | new energydb  | ✅ |
-| 06.04 | indexes  | 🛠️ |
-| 06.05 | indexes lab  | - |
+| 06.03 | new `energydb`  | ✅ |
+| 06.04 | indexes  | ✅ |
+| 06.05 | indexes lab on `energydb` | - |
 |-------|-----------------------|----------|
 | 06.03 | quiz on algorithms  | 🛠️ |
 | 08 | projet | - |
