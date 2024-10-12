@@ -24,6 +24,15 @@
 | 06.05 | quiz on algorithms  | ✅ |
 | 06.06 | indexes lab on `energydb` | ✅  |
 |-------|-----------------------|----------|
+| 07.01 | Intro Views & Functions  | - |
+| 07.02 | Views  | - |
+| 07.03 | PL/pgSQL & Functions  | - |
+|-------|-----------------------|----------|
+| 08.01 | Intro Triggers & Procedures & Transactions | - |
+| 08.02 | Triggers  | - |
+| 08.03 | Procedures  | - |
+| 08.03 | Transactions  | - |
+|-------|-----------------------|----------|
 
 Quiz on algorithms
 <https://forms.gle/5fdjpUSr8YaqA9KNA>

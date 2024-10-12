@@ -1,7 +1,8 @@
 # Functions
+
 ----------------------------------
 
-https://www.postgresql.org/docs/current/plpgsql.html
+<https://www.postgresql.org/docs/current/plpgsql.html>
 
 1. Introduction
    - Learning objectives: What students will gain from this class
@@ -11,7 +12,7 @@ https://www.postgresql.org/docs/current/plpgsql.html
 
 Functions in PostgreSQL are user-defined routines that encapsulate a sequence of operations and can be invoked by name. They are powerful tools that allow you to perform calculations, manipulate data, and execute complex logic within the database.
 
-#### Key Characteristics:
+#### Key Characteristics
 
 1. **Encapsulation of Logic**:
    - Functions allow you to encapsulate and reuse SQL queries and logic. This helps to maintain a DRY (Don't Repeat Yourself) codebase, as you can define the logic once in a function and call it multiple times.
@@ -39,7 +40,7 @@ Functions in PostgreSQL are user-defined routines that encapsulate a sequence of
 7. **Error Handling**:
    - Functions in PL/pgSQL support error handling using `BEGIN...EXCEPTION...END` blocks, allowing you to handle exceptions and ensure graceful failure.
 
-#### Basic Example:
+#### Basic Example
 
 A simple function to add two numbers:
 
@@ -53,20 +54,22 @@ $$ LANGUAGE plpgsql;
 
 This function `add_numbers` takes two integers as input and returns their sum.
 
-#### Usage:
+#### Usage
 
 - **Calling a Function**:
+
   ```sql
   SELECT add_numbers(3, 5);  -- Returns 8
   ```
 
 - **Using a Function in Queries**:
+
   ```sql
   SELECT customer_id, add_numbers(order_value, tax_amount) AS total_amount
   FROM orders;
   ```
 
-#### Advanced Usage:
+#### Advanced Usage
 
 - **Table-Returning Functions**: A function that returns a set of rows can be treated like a table in queries.
 
@@ -82,6 +85,7 @@ This function `add_numbers` takes two integers as input and returns their sum.
   ```
 
   Usage:
+
   ```sql
   SELECT * FROM get_active_customers();
   ```
@@ -101,10 +105,9 @@ This function `add_numbers` takes two integers as input and returns their sum.
 
   This function handles division by zero by raising an exception.
 
-### Summary:
+### Summary
 
 Functions in PostgreSQL are versatile and powerful, enabling you to create reusable logic within the database. They support various return types, can accept input parameters, and can be written in different languages. Whether performing simple calculations or complex operations involving multiple SQL statements, functions are an essential tool for database development and management.
-
 
 3. Creating and Managing Functions
    3.1. Basic Function Creation
@@ -121,18 +124,14 @@ Functions in PostgreSQL are versatile and powerful, enabling you to create reusa
    3.4. Deleting Functions
        - DROP FUNCTION command
 
-
-
 ### Hands on
 
 scalar functions: stats on tables (number of trips, average price, diameter from circumference, or volume, -> closest tree <-)
 table valued functions: returns relations
 
-
 in the context of a query:
 select closes_tree() as neighbor_tree_id from ....
 update statstable set ... = function(), ... where id = ...
-
 
 4. Types of Functions
    4.1. Scalar Functions
