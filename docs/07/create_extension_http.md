@@ -10,8 +10,6 @@ I understand you're using a Mac and have installed PostgreSQL 16 using Homebrew,
 
 2. The `http` extension is part of a separate project called `pgsql-http`. We need to install this separately. Here's how you can do it:
 
-   ```bash
-
 # Install dependencies
 
    brew install curl openssl
@@ -41,15 +39,13 @@ I understand you're using a Mac and have installed PostgreSQL 16 using Homebrew,
 
    \dx
 
-```
+Here's a breakdown of these steps:
 
-   Here's a breakdown of these steps:
-
-   a. Install necessary dependencies (curl and openssl) using Homebrew.
-   b. Clone the pgsql-http repository from GitHub.
-   c. Build and install the extension using make commands.
-   d. If you encounter issues with make not finding pg_config, you may need to specify its path explicitly.
-   e. After installation, try creating the extension again in your PostgreSQL database.
+a. Install necessary dependencies (curl and openssl) using Homebrew.
+b. Clone the pgsql-http repository from GitHub.
+c. Build and install the extension using make commands.
+d. If you encounter issues with make not finding pg_config, you may need to specify its path explicitly.
+e. After installation, try creating the extension again in your PostgreSQL database.
 
 3. If you encounter any permission issues during the installation, you might need to use `sudo` for the `make install` command:
 
