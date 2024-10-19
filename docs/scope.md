@@ -36,3 +36,6 @@
 
 Quiz on algorithms
 <https://forms.gle/5fdjpUSr8YaqA9KNA>
+
+Liquibase for version control
+<https://docs.liquibase.com/start/tutorials/postgresql/postgresql.html>
