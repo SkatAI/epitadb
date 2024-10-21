@@ -19,6 +19,7 @@ __pycache__/
 # Ignored Configuration Files
 .env
 .vscode/
+.markdownlint.yaml
 
 # Ignored Miscellaneous Files
 .DS_Store
