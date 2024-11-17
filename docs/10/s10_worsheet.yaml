@@ -1,0 +1,132 @@
+quizzes:
+  - title: Worksheet on the ADEME dataset
+    live: false
+    lang: en
+    description: |
+      In this worksheet, you work with the ADEME dataset, a collection of 10k energy diagnostic of building in France.
+      Each builing is labeled with a letter A to G. A and B graded buildings show top level energy efficiency
+      while F and G labeled buildings are called "passoire energetique" (energy guzzler).
+
+      [ADEME](https://ademe.fr) is the French government agency for ecological transition, supporting sustainability, energy efficiency, and environmental innovation.
+      The DPE dataset is available at this address https://data.ademe.fr/datasets/dpe-v2-tertiaire-2.
+      The whole dataset includes over 600k energy audits but we will only work on a subset of 10k samples.
+
+      This worksheet has multiple parts and will cover most of the course content including
+
+      - normalization: NF1, NF2, NF3
+      - index creation: B-tree and hash indexes
+      - Optimizing quiries with EXPLAIN
+      - window functions and CTEs
+      - SQL and PL/pgSQL functions
+
+      As often the case in real world situations the dataset is far from being perfect.
+      Your mission is to understand the data, imprrove it and make it ready for production use.
+
+    questions:
+      - ask: "Part I: Let's get started"
+        type: info
+        context:
+          In the 1st part you load the dataset into a newly created `ademedb` database.
+          This database has just one table called `dpe` with over 50 columns and a lot of null values
+      - ask: "Connect to the server"
+        type: info
+        context: |
+          Connect to the postgresql server. We will first review how to manage the server from the terminal.
+      - ask: "Connect to the server"
+        type: info
+        context: |
+          Connect to the postgresql server preferably in the terminal with psql.
+          Connect to the postgres database.
+          Use `postgres` as the user if you're on windows, or the default system user if you're on a Mac.
+          We start by review how to manage the server.
+      - ask: "How can you check that your server is running?"
+        type: text
+        context: |
+          Write down the command line that restarts the server and its output.
+      - ask: "What's the command line to restart the server ?"
+        type: text
+        context: |
+          Write down the command line that restarts the server
+      - ask: "List the databases that are in your server"
+        type: text
+        context: |
+          In a psql session use the `\l` command. paste the output.
+      - ask: "List the tables in the `postgres` database"
+        type: text
+        context: |
+          Connect to the postgres database and list the tables. paste the raw output of the command below.
+      - ask: "Create the database and load the data"
+        type: mcq
+        context: |
+          We now create a new database `ademedb`.
+          There are multiple ways do do it. Which ones are valid ?
+        score: 1
+        answers:
+          - statement: In the terminal, `createdb -h localhost -U postgres --encoding 'UTF8' ademedb `
+            correct: true
+          - statement: In a SQL session `CREATE DATABASE ademedb encoding 'UTF8';`
+            correct: true
+          - statement: In pgadmin, click right on `Database > Create > Database` and input the database name
+            correct: true
+          - statement: |
+              In the terminal,
+              ```sql
+              psql postgres -c "CREATE DATABASE ademedb WITH ENCODING=UTF8;"
+              ````
+            correct: true
+          - statement: Ask the person sitting next to you to create it for you
+            correct: true
+
+      - ask: "Load the data"
+        type: mcq
+        context: |
+          The database is now created (check with `\l`).
+          The data dump is available from github at <https://github.com/SkatAI/epitadb/blob/master/data/ademe_backup_01.dump>
+          Download the file.
+          The database was dumped with
+
+          ```bash
+          pg_dump \
+              -h localhost \
+              --no-owner \
+              --no-acl \
+              --clean \
+              --if-exists \
+              --format=custom \
+              --compress=9 \
+              --file=ademe_backup.dump \
+              ademedb
+          ```
+
+          What is the equivalent `pg_restore` statement ?
+        answers:
+          - statement: |
+              simply
+              ```
+              pg_restore \
+                  --dbname=ademedb \
+                  ademe_backup.dump
+              ```
+            correct: false
+          - statement: |
+              including the `--no-owner` flag ?
+              ```
+              pg_restore \
+                  --no-owner \
+                  --no-acl \
+                  --clean \
+                  --if-exists \
+                  --dbname=ademedb \
+                  ademe_backup.dump
+              ```
+            correct: true
+          - statement: |
+              without the --clean and --if-exists flags  ?
+              ```
+              pg_restore \
+                  --no-owner \
+                  --no-acl \
+                  --dbname=ademedb \
+                  ademe_backup.dump
+              ```
+            correct: true
