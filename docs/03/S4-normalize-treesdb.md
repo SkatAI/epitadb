@@ -157,6 +157,7 @@ DROP COLUMN name;
 ```
 
 ### variations
+
 Notice that the names in the new tree_names table follow no particular order.
 
 To keep things really tidy, it would be great to have the name column be ordered alphabetically
